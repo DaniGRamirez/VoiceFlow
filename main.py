@@ -2,6 +2,7 @@
 VoiceFlow - Control por voz para VSCode
 """
 
+import sys
 import threading
 
 from core.engine import VoiceEngine
@@ -11,6 +12,9 @@ from core.actions import Actions, NUMEROS
 from ui.overlay import Overlay
 from audio.feedback import SoundPlayer
 from config.settings import load_config
+
+
+DEBUG_MODE = "--debug" in sys.argv or "-d" in sys.argv
 
 
 def main():
@@ -34,16 +38,23 @@ def main():
         volume=sounds_config.get("volume", 0.5)
     )
 
-    actions = Actions(config)
+    actions = Actions(config, debug_mode=DEBUG_MODE)
 
     # Registrar comandos
     registry = CommandRegistry()
 
     registry.register(Command(
         keywords=["claudia"],
+        action=actions.on_claudia,
+        allowed_states=[State.IDLE],
+        sound="ding"
+    ))
+
+    registry.register(Command(
+        keywords=["dictado"],
         action=lambda: (
             state_machine.transition(State.DICTATING),
-            actions.on_claudia()
+            actions.on_dictado()
         ),
         allowed_states=[State.IDLE],
         sound="ding"
@@ -120,34 +131,71 @@ def main():
             if state_machine.state == State.IDLE:
                 print(f"   (ignorado)")
 
-    # Iniciar motor de voz en thread separado
-    engine = VoiceEngine(
-        model_path=config.get("model_path", "models/vosk-model-small-es-0.42"),
-        on_result=on_speech
-    )
-
-    voice_thread = threading.Thread(target=engine.start, daemon=True)
-    voice_thread.start()
-
     print("=" * 50)
-    print("VoiceFlow - Activo")
+    if DEBUG_MODE:
+        print("VoiceFlow - MODO DEBUG")
+    else:
+        print("VoiceFlow - Activo")
     print("=" * 50)
     print("Comandos:")
-    print("  'claudia'   -> VSCode + Chat + Wispr")
-    print("  'listo'     -> Pega texto")
-    print("  'cancela'   -> Borra texto")
+    print("  'claudia'   -> VSCode + Chat")
+    print("  'dictado'   -> Activa Wispr")
+    print("  'listo'     -> Termina dictado")
+    print("  'cancela'   -> Cancela dictado")
     print("  'enter'     -> Pulsa Enter")
     print("  'seleccion' -> Ctrl+A")
     print("  'eliminar'  -> Delete")
     print("  'opcion X'  -> Pulsa numero")
+    if DEBUG_MODE:
+        print("  'exit'      -> Salir")
     print("=" * 50)
+
+    engine = None
+
+    if not DEBUG_MODE:
+        # Callback para nivel de microfono
+        def on_mic_level(level: float):
+            overlay.set_mic_level(level)
+
+        # Iniciar motor de voz en thread separado
+        engine = VoiceEngine(
+            model_path=config.get("model_path", "models/vosk-model-small-es-0.42"),
+            on_result=on_speech,
+            on_mic_level=on_mic_level
+        )
+        voice_thread = threading.Thread(target=engine.start, daemon=True)
+        voice_thread.start()
 
     # Loop principal de UI
     try:
+        if DEBUG_MODE:
+            # Modo debug: leer comandos del teclado
+            def debug_input():
+                while True:
+                    try:
+                        text = input("> ").strip()
+                        if text.lower() == "exit":
+                            overlay.quit()
+                            break
+                        if text:
+                            on_speech(text)
+                    except EOFError:
+                        break
+
+            input_thread = threading.Thread(target=debug_input, daemon=True)
+            input_thread.start()
+
         while True:
             overlay.update()
     except KeyboardInterrupt:
-        engine.stop()
+        pass
+    except Exception as e:
+        print(f"\n[ERROR] {e}")
+    finally:
+        # SIEMPRE liberar teclas al salir
+        actions.release_keys()
+        if engine:
+            engine.stop()
         overlay.quit()
 
 

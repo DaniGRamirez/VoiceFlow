@@ -1,16 +1,19 @@
 import json
 import queue
-from typing import Callable
+import numpy as np
+from typing import Callable, Optional
 
 import sounddevice as sd
 from vosk import Model, KaldiRecognizer
 
 
 class VoiceEngine:
-    def __init__(self, model_path: str, on_result: Callable[[str], None]):
+    def __init__(self, model_path: str, on_result: Callable[[str], None],
+                 on_mic_level: Optional[Callable[[float], None]] = None):
         self.model = Model(model_path)
         self.recognizer = KaldiRecognizer(self.model, 16000)
         self.on_result = on_result
+        self.on_mic_level = on_mic_level
         self._queue = queue.Queue()
         self._running = False
 
@@ -18,6 +21,14 @@ class VoiceEngine:
         if status:
             print(f"Audio status: {status}")
         self._queue.put(bytes(indata))
+
+        # Calcular nivel de audio para feedback visual
+        if self.on_mic_level:
+            audio_data = np.frombuffer(indata, dtype=np.int16)
+            rms = np.sqrt(np.mean(audio_data.astype(np.float32) ** 2))
+            # Normalizar a 0-1 (ajustar 3000 segun sensibilidad deseada)
+            level = min(1.0, rms / 3000.0)
+            self.on_mic_level(level)
 
     def start(self):
         self._running = True

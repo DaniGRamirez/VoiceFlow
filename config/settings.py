@@ -1,12 +1,15 @@
 import json
 import os
 
+# Directorio base del proyecto
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 DEFAULT_CONFIG = {
-    "model_path": "models/vosk-model-small-es-0.42",
+    "model_path": os.path.join(BASE_DIR, "models", "vosk-model-small-es-0.42"),
 
     "overlay": {
         "size": 40,
-        "position": [1850, 50],
+        "position": [100, 100],
         "opacity": 0.9
     },
 
