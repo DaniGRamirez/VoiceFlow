@@ -8,8 +8,12 @@ venv/
 .env
 
 # Vosk models (too large)
+models/
 vosk-model-*/
 *.zip
+
+# User config
+config.json
 
 # IDE
 .vscode/

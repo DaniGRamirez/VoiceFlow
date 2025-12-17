@@ -1,0 +1,22 @@
+{
+    "model_path": "models/vosk-model-small-es-0.42",
+
+    "overlay": {
+        "size": 40,
+        "position": [1850, 50],
+        "opacity": 0.9
+    },
+
+    "sounds": {
+        "enabled": true,
+        "volume": 0.5
+    },
+
+    "hotkeys": {
+        "vscode_chat": "ctrl+alt+shift+g"
+    },
+
+    "wispr": {
+        "hold_keys": ["ctrl", "win"]
+    }
+}
