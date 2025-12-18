@@ -5,7 +5,10 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEFAULT_CONFIG = {
-    "model_path": os.path.join(BASE_DIR, "models", "vosk-model-small-es-0.42"),
+    "model_path": os.path.join(BASE_DIR, "models", "vosk-model-es-0.42"),
+
+    # Modo de dictado: "wispr" o "winh" (Win+H de Windows)
+    "dictation_mode": "wispr",
 
     "overlay": {
         "size": 40,
@@ -24,6 +27,14 @@ DEFAULT_CONFIG = {
 
     "wispr": {
         "hold_keys": ["ctrl", "win"]
+    },
+
+    "timing": {
+        "vscode_focus_delay": 0.3,
+        "chat_open_delay": 0.5,
+        "dictation_release_delay": 0.5,
+        "clipboard_delay": 0.1,
+        "key_delay": 0.1
     }
 }
 
