@@ -17,7 +17,7 @@ from config.aliases import (
     ENTER_ALIASES, ESCAPE_ALIASES, TAB_ALIASES,
     ARRIBA_ALIASES, ABAJO_ALIASES, IZQUIERDA_ALIASES, DERECHA_ALIASES,
     COPIAR_ALIASES, PEGAR_ALIASES, DESHACER_ALIASES, REHACER_ALIASES,
-    GUARDAR_ALIASES, SELECCION_ALIASES, ELIMINAR_ALIASES, BORRA_TODO_ALIASES,
+    GUARDAR_ALIASES, SELECCION_ALIASES, ELIMINAR_ALIASES, BORRAR_ALIASES, BORRA_TODO_ALIASES,
     INICIO_ALIASES, FIN_ALIASES,
     DICTADO_ALIASES, LISTO_ALIASES, CANCELA_ALIASES, ENVIAR_ALIASES,
     CLAUDIA_ALIASES, CLAUDIA_DICTADO_ALIASES,
@@ -240,6 +240,13 @@ def main():
     registry.register(Command(
         keywords=ELIMINAR_ALIASES,
         action=actions.on_eliminar,
+        allowed_states=[State.IDLE],
+        sound="click"
+    ))
+
+    registry.register(Command(
+        keywords=BORRAR_ALIASES,
+        action=actions.on_eliminar,  # Misma acción que eliminar
         allowed_states=[State.IDLE],
         sound="click"
     ))

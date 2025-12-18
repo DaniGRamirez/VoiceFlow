@@ -107,7 +107,7 @@ class UsageLogger:
                 json.dump(data, f, indent=2, ensure_ascii=False)
             self._last_saved_commands = len(self._commands_executed)
             self._last_saved_ignored = len(self._ignored_texts)
-            print(f"[Log] Auto-guardado: {len(self._commands_executed)} comandos, {len(self._ignored_texts)} ignorados")
+            # Auto-guardado silencioso (solo un punto para indicar actividad)
         except Exception as e:
             print(f"[Log] Error en auto-guardado: {e}")
 
@@ -222,9 +222,11 @@ class UsageLogger:
         try:
             with open(LOG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
-            print(f"[Log] Sesión guardada: {len(self._commands_executed)} comandos, {len(self._ignored_texts)} ignorados")
+            print(f"\n[LOG] ✓ Sesión guardada correctamente")
+            print(f"[LOG]   Archivo: {LOG_FILE}")
+            print(f"[LOG]   Comandos: {len(self._commands_executed)}, Ignorados: {len(self._ignored_texts)}")
         except Exception as e:
-            print(f"[Log] Error guardando: {e}")
+            print(f"\n[LOG] ✗ ERROR guardando sesión: {e}")
 
     def _load_existing(self) -> dict:
         """Carga el log existente o crea uno nuevo."""

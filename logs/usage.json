@@ -1589,8 +1589,8 @@
     },
     {
       "start": "2025-12-18T13:16:27.206071",
-      "end": "2025-12-18T13:19:27.211138",
-      "duration_seconds": 180.005072,
+      "end": "2025-12-18T13:37:27.266658",
+      "duration_seconds": 1260.060591,
       "commands": [
         {
           "time": "2025-12-18T13:16:41.150316",
@@ -1603,6 +1603,113 @@
           "command": "dictado",
           "recognized": "dictado",
           "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:19:44.646680",
+          "command": "enviar",
+          "recognized": "enviar",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:21:49.275809",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:21:59.399092",
+          "command": "enter",
+          "recognized": "entero",
+          "model": "small",
+          "attempts": [
+            "cáncer",
+            "cántaros"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:22:10.153443",
+          "command": "enter",
+          "recognized": "center",
+          "model": "small",
+          "attempts": [
+            "en tanto",
+            "anterior"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:22:13.539487",
+          "command": "enter",
+          "recognized": "entre",
+          "model": "small",
+          "attempts": [
+            "el hotel"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:22:29.397578",
+          "command": "enter",
+          "recognized": "intro",
+          "model": "small",
+          "attempts": [
+            "dentro"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:22:40.655194",
+          "command": "enter",
+          "recognized": "entre",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:22:43.026448",
+          "command": "enter",
+          "recognized": "entre",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:26:06.026178",
+          "command": "enter",
+          "recognized": "contact center",
+          "model": "small",
+          "attempts": [
+            "montero"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:26:28.406440",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "small",
+          "attempts": [
+            "externo"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:26:50.399719",
+          "command": "enviar",
+          "recognized": "enviar",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:30:17.017416",
+          "command": "claudia",
+          "recognized": "claudia",
+          "model": "small",
+          "attempts": [
+            "fraude"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:30:45.148940",
+          "command": "dictado",
+          "recognized": "dictador",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:31:13.266062",
+          "command": "cancela",
+          "recognized": "cancelar",
+          "model": "small"
         }
       ],
       "ignored": [
@@ -1613,22 +1720,407 @@
         {
           "time": "2025-12-18T13:19:11.151653",
           "text": "vale vale vale vale"
+        },
+        {
+          "time": "2025-12-18T13:21:52.652605",
+          "text": "montero"
+        },
+        {
+          "time": "2025-12-18T13:21:55.025787",
+          "text": "cáncer"
+        },
+        {
+          "time": "2025-12-18T13:21:57.149623",
+          "text": "cántaros"
+        },
+        {
+          "time": "2025-12-18T13:22:03.159741",
+          "text": "conocer gente"
+        },
+        {
+          "time": "2025-12-18T13:22:05.404975",
+          "text": "en tanto"
+        },
+        {
+          "time": "2025-12-18T13:22:08.537347",
+          "text": "anterior"
+        },
+        {
+          "time": "2025-12-18T13:22:11.774478",
+          "text": "el hotel"
+        },
+        {
+          "time": "2025-12-18T13:22:18.786851",
+          "text": "nuestro centro"
+        },
+        {
+          "time": "2025-12-18T13:22:21.914212",
+          "text": "centro"
+        },
+        {
+          "time": "2025-12-18T13:22:26.656861",
+          "text": "dentro"
+        },
+        {
+          "time": "2025-12-18T13:22:33.656636",
+          "text": "el perro"
+        },
+        {
+          "time": "2025-12-18T13:22:45.655359",
+          "text": "antes"
+        },
+        {
+          "time": "2025-12-18T13:22:48.774155",
+          "text": "este"
+        },
+        {
+          "time": "2025-12-18T13:22:53.153198",
+          "text": "antes de spot"
+        },
+        {
+          "time": "2025-12-18T13:22:55.275120",
+          "text": "el curso"
+        },
+        {
+          "time": "2025-12-18T13:22:58.658641",
+          "text": "las puros"
+        },
+        {
+          "time": "2025-12-18T13:23:38.901965",
+          "text": "siguiente canción"
+        },
+        {
+          "time": "2025-12-18T13:25:00.543610",
+          "text": "por último grupo"
+        },
+        {
+          "time": "2025-12-18T13:25:25.864975",
+          "text": "tipo"
+        },
+        {
+          "time": "2025-12-18T13:25:40.900956",
+          "text": "claro"
+        },
+        {
+          "time": "2025-12-18T13:26:01.037206",
+          "text": "montero"
+        },
+        {
+          "time": "2025-12-18T13:26:25.271347",
+          "text": "externo"
+        },
+        {
+          "time": "2025-12-18T13:30:13.529428",
+          "text": "fraude"
+        },
+        {
+          "time": "2025-12-18T13:34:39.902161",
+          "text": "sí"
+        },
+        {
+          "time": "2025-12-18T13:36:20.679767",
+          "text": "con"
+        },
+        {
+          "time": "2025-12-18T13:36:28.229704",
+          "text": "bogotá"
+        },
+        {
+          "time": "2025-12-18T13:36:30.524376",
+          "text": "público"
+        },
+        {
+          "time": "2025-12-18T13:36:35.590017",
+          "text": "color rojo"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T13:53:43.049211",
+      "end": "2025-12-18T13:56:43.070100",
+      "duration_seconds": 180.020893,
+      "commands": [
+        {
+          "time": "2025-12-18T13:54:02.392663",
+          "command": "claudia",
+          "recognized": "claudio",
+          "model": "small",
+          "attempts": [
+            "unión"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:54:23.958461",
+          "command": "dictado",
+          "recognized": "víctor",
+          "model": "es-0.42",
+          "attempts": [
+            "vale"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:55:29.928940",
+          "command": "cancela",
+          "recognized": "cancela",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T13:55:34.168551",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T13:55:37.071441",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T13:55:48.426675",
+          "command": "claudia",
+          "recognized": "claudia",
+          "model": "es-0.42",
+          "attempts": [
+            "cancela"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:56:14.060656",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "es-0.42",
+          "attempts": [
+            "prueba"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:56:17.006351",
+          "command": "enter",
+          "recognized": "entera",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T13:56:19.797162",
+          "command": "opcion uno",
+          "recognized": "uno",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T13:56:22.666927",
+          "command": "opcion uno",
+          "recognized": "uno",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T13:56:38.830613",
+          "command": "enter",
+          "recognized": "entera",
+          "model": "es-0.42",
+          "attempts": [
+            "cancela"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:56:41.934954",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "es-0.42"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T13:53:53.798157",
+          "text": "robin"
+        },
+        {
+          "time": "2025-12-18T13:53:58.141172",
+          "text": "unión"
+        },
+        {
+          "time": "2025-12-18T13:54:10.896567",
+          "text": "prólogo"
+        },
+        {
+          "time": "2025-12-18T13:54:21.480587",
+          "text": "vale"
+        },
+        {
+          "time": "2025-12-18T13:55:39.558244",
+          "text": "cancelar"
+        },
+        {
+          "time": "2025-12-18T13:55:42.419266",
+          "text": "cancelar"
+        },
+        {
+          "time": "2025-12-18T13:55:45.578788",
+          "text": "cancela"
+        },
+        {
+          "time": "2025-12-18T13:55:53.941270",
+          "text": "cómo"
+        },
+        {
+          "time": "2025-12-18T13:56:11.928665",
+          "text": "prueba"
+        },
+        {
+          "time": "2025-12-18T13:56:25.557592",
+          "text": "cancela"
+        },
+        {
+          "time": "2025-12-18T13:56:28.930924",
+          "text": "cancelan"
+        },
+        {
+          "time": "2025-12-18T13:56:32.066138",
+          "text": "cancelan"
+        },
+        {
+          "time": "2025-12-18T13:56:35.178803",
+          "text": "cancela"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T13:56:49.229795",
+      "end": "2025-12-18T14:14:49.289819",
+      "duration_seconds": 1080.060029,
+      "commands": [
+        {
+          "time": "2025-12-18T13:57:03.443159",
+          "command": "claudia",
+          "recognized": "claudio",
+          "model": "small",
+          "attempts": [
+            "clave"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:57:14.558240",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "small",
+          "attempts": [
+            "vender"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:57:23.442506",
+          "command": "enter",
+          "recognized": "entero",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T13:58:01.635426",
+          "command": "claudia",
+          "recognized": "claudio",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T13:58:08.723537",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "es-0.42",
+          "attempts": [
+            "gritado"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:58:37.341309",
+          "command": "enviar",
+          "recognized": "enviar",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T14:06:01.376808",
+          "command": "opcion uno",
+          "recognized": "uno",
+          "model": "es-0.42",
+          "attempts": [
+            "japón"
+          ]
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T13:57:00.066886",
+          "text": "clave"
+        },
+        {
+          "time": "2025-12-18T13:57:11.439545",
+          "text": "vender"
+        },
+        {
+          "time": "2025-12-18T13:58:05.238063",
+          "text": "gritado"
+        },
+        {
+          "time": "2025-12-18T13:59:53.087401",
+          "text": "hola"
+        },
+        {
+          "time": "2025-12-18T14:02:39.792045",
+          "text": "cómo"
+        },
+        {
+          "time": "2025-12-18T14:04:00.499588",
+          "text": "oh"
+        },
+        {
+          "time": "2025-12-18T14:04:50.767940",
+          "text": "grupo"
+        },
+        {
+          "time": "2025-12-18T14:05:36.164868",
+          "text": "cómo"
+        },
+        {
+          "time": "2025-12-18T14:05:56.428760",
+          "text": "japón"
+        },
+        {
+          "time": "2025-12-18T14:06:16.740779",
+          "text": "cucurucho"
+        },
+        {
+          "time": "2025-12-18T14:06:36.663044",
+          "text": "uh"
+        },
+        {
+          "time": "2025-12-18T14:06:41.682817",
+          "text": "uh"
+        },
+        {
+          "time": "2025-12-18T14:12:35.243456",
+          "text": "cómo"
+        },
+        {
+          "time": "2025-12-18T14:13:45.943001",
+          "text": "cómo"
+        },
+        {
+          "time": "2025-12-18T14:14:03.155216",
+          "text": "uh"
         }
       ],
       "active": true
     }
   ],
   "stats": {
-    "total_sessions": 23,
-    "total_commands": 167,
-    "total_ignored": 107,
+    "total_sessions": 25,
+    "total_commands": 200,
+    "total_ignored": 163,
     "command_frequency": {
-      "dictado": 44,
-      "claudia": 31,
-      "enter": 24,
-      "enviar": 21,
-      "cancela": 14,
-      "opcion uno": 7,
+      "dictado": 48,
+      "enter": 40,
+      "claudia": 36,
+      "enviar": 24,
+      "cancela": 16,
+      "opcion uno": 10,
       "opcion dos": 7,
       "listo": 6,
       "ayuda": 4,
@@ -1640,19 +2132,28 @@
       "tab": 1
     },
     "ignored_frequency": {
-      "vale": 3,
+      "cómo": 5,
+      "vale": 4,
+      "este": 4,
+      "centro": 4,
       "mercado": 3,
       "héctor": 3,
-      "este": 3,
-      "centro": 3,
+      "cancelar": 3,
       "como": 3,
+      "cancela": 3,
+      "uh": 3,
+      "clave": 2,
       "lector": 2,
       "um": 2,
+      "prueba": 2,
       "claudio": 2,
       "néctar": 2,
       "etc": 2,
+      "dentro": 2,
+      "vender": 2,
       "familia": 2,
-      "clave": 1,
+      "montero": 2,
+      "cancelan": 2,
       "ah": 1,
       "aquí": 1,
       "vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale": 1,
@@ -1667,7 +2168,6 @@
       "bueno bueno": 1,
       "otra cosa": 1,
       "fama": 1,
-      "prueba": 1,
       "vale prueba prueba prueba prueba": 1,
       "todavía": 1,
       "espalda": 1,
@@ -1678,18 +2178,10 @@
       "lo veo": 1,
       "richard": 1,
       "hoy": 1,
-      "cancelar": 1,
       "entre": 1,
       "famosa": 1,
       "opción": 1,
-      "broussard": 1,
-      "club": 1,
-      "víctor": 1,
-      "bien": 1,
-      "rappel": 1,
-      "tal": 1,
-      "gobierno": 1,
-      "fender": 1
+      "broussard": 1
     }
   }
 }

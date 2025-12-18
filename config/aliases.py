@@ -30,7 +30,8 @@ DESHACER_ALIASES = ["deshacer", "deshace", "desase"]
 REHACER_ALIASES = ["rehacer", "rehace"]
 GUARDAR_ALIASES = ["guardar", "guarda"]
 SELECCION_ALIASES = ["seleccion", "selección"]
-ELIMINAR_ALIASES = ["eliminar", "borrar", "elimina"]
+ELIMINAR_ALIASES = ["eliminar", "elimina"]
+BORRAR_ALIASES = ["borrar", "borra"]
 BORRA_TODO_ALIASES = ["borra todo", "borrar todo"]
 
 # Navegación documento
