@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Blob Test</title>
+  <style>
+    html, body { margin:0; height:100%; background:#0b0b0b; overflow:hidden; }
+    canvas { display:block; }
+    .hint{
+      position:fixed; left:16px; top:16px;
+      color:#bbb; font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      opacity:.85; user-select:none;
+    }
+  </style>
+</head>
+<body>
+  <div class="hint">
+    Click para activar micrófono. Teclas: <b>I</b>=idle, <b>D</b>=dictado
+  </div>
+  <canvas id="c"></canvas>
+  <script src="./blob.js"></script>
+</body>
+</html>

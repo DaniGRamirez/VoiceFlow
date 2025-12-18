@@ -115,12 +115,12 @@ def get_dictation_mode() -> str:
             mode = sys.argv[i + 1].lower()
             if mode in ("wispr", "winh"):
                 return mode
-            print(f"[WARN] Modo de dictado '{mode}' no reconocido, usando 'wispr'")
-            return "wispr"
+            print(f"[WARN] Modo de dictado '{mode}' no reconocido, usando 'winh'")
+            return "winh"
 
     # Si no hay argumento, usar config
     config = load_config()
-    return config.get("dictation_mode", "wispr")
+    return config.get("dictation_mode", "winh")
 
 
 def main():

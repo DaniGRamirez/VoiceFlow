@@ -1,0 +1,1474 @@
+{
+  "sessions": [
+    {
+      "start": "2025-12-18T10:25:53.212825",
+      "end": "2025-12-18T10:27:53.214706",
+      "duration_seconds": 120.001885,
+      "commands": [
+        {
+          "time": "2025-12-18T10:26:18.190210",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T10:26:31.183465",
+          "command": "dictado",
+          "recognized": "dictador"
+        },
+        {
+          "time": "2025-12-18T10:26:55.687418",
+          "command": "enviar",
+          "recognized": "enviar"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T10:26:09.698045",
+          "text": "clave"
+        },
+        {
+          "time": "2025-12-18T10:26:28.211175",
+          "text": "lector"
+        },
+        {
+          "time": "2025-12-18T10:27:31.207088",
+          "text": "ah"
+        },
+        {
+          "time": "2025-12-18T10:27:36.267261",
+          "text": "aquí"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T10:28:36.597040",
+      "end": "2025-12-18T10:31:36.627606",
+      "duration_seconds": 180.03057,
+      "commands": [
+        {
+          "time": "2025-12-18T10:29:09.065019",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T10:29:18.075462",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:29:51.067230",
+          "command": "listo",
+          "recognized": "listo listo"
+        },
+        {
+          "time": "2025-12-18T10:30:11.089978",
+          "command": "enter",
+          "recognized": "enter"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T10:28:54.079041",
+          "text": "vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale"
+        },
+        {
+          "time": "2025-12-18T10:28:59.076141",
+          "text": "cabe"
+        },
+        {
+          "time": "2025-12-18T10:29:02.565672",
+          "text": "novia"
+        },
+        {
+          "time": "2025-12-18T10:29:05.566990",
+          "text": "claro y el"
+        },
+        {
+          "time": "2025-12-18T10:29:13.579080",
+          "text": "estado"
+        },
+        {
+          "time": "2025-12-18T10:31:23.685929",
+          "text": "apple"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T10:32:11.506334",
+      "end": "2025-12-18T10:35:11.522622",
+      "duration_seconds": 180.016293,
+      "commands": [
+        {
+          "time": "2025-12-18T10:32:27.085009",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T10:32:31.081778",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:33:10.085415",
+          "command": "enviar",
+          "recognized": "enviar"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T10:32:17.741727",
+          "text": "vale"
+        },
+        {
+          "time": "2025-12-18T10:32:22.080209",
+          "text": "vale vale vale vale vale"
+        },
+        {
+          "time": "2025-12-18T10:34:42.584146",
+          "text": "título"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T10:35:15.015976",
+      "end": "2025-12-18T10:38:15.020089",
+      "duration_seconds": 180.004117,
+      "commands": [
+        {
+          "time": "2025-12-18T10:35:20.477600",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T10:35:32.990256",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:35:42.477514",
+          "command": "enviar",
+          "recognized": "enviar"
+        },
+        {
+          "time": "2025-12-18T10:36:07.532507",
+          "command": "opcion una",
+          "recognized": "alguna páginas"
+        },
+        {
+          "time": "2025-12-18T10:37:09.473598",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:37:23.471763",
+          "command": "enviar",
+          "recognized": "enviar"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T10:35:26.504316",
+          "text": "vale ahora prueba prueba prueba prueba prueba prueba"
+        },
+        {
+          "time": "2025-12-18T10:35:28.983209",
+          "text": "vale"
+        },
+        {
+          "time": "2025-12-18T10:36:18.035421",
+          "text": "bueno bueno"
+        },
+        {
+          "time": "2025-12-18T10:36:23.072820",
+          "text": "otra cosa"
+        },
+        {
+          "time": "2025-12-18T10:38:03.980568",
+          "text": "um"
+        },
+        {
+          "time": "2025-12-18T10:38:08.994090",
+          "text": "fama"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T10:38:43.896337",
+      "end": "2025-12-18T10:43:43.931929",
+      "duration_seconds": 300.035597,
+      "commands": [
+        {
+          "time": "2025-12-18T10:39:03.964963",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T10:39:16.992961",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:39:33.963636",
+          "command": "enviar",
+          "recognized": "enviar"
+        },
+        {
+          "time": "2025-12-18T10:41:09.463925",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T10:41:16.469957",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:42:01.963406",
+          "command": "enviar",
+          "recognized": "enviar"
+        },
+        {
+          "time": "2025-12-18T10:42:43.963449",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:42:59.982288",
+          "command": "enviar",
+          "recognized": "enviar"
+        },
+        {
+          "time": "2025-12-18T10:43:34.484392",
+          "command": "dictado",
+          "recognized": "la estado"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T10:39:01.989937",
+          "text": "prueba"
+        },
+        {
+          "time": "2025-12-18T10:39:12.969995",
+          "text": "mercado"
+        },
+        {
+          "time": "2025-12-18T10:40:35.968480",
+          "text": "vale prueba prueba prueba prueba"
+        },
+        {
+          "time": "2025-12-18T10:41:06.501012",
+          "text": "todavía"
+        },
+        {
+          "time": "2025-12-18T10:41:12.978060",
+          "text": "espalda"
+        },
+        {
+          "time": "2025-12-18T10:42:40.027747",
+          "text": "afectado"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T10:44:26.542315",
+      "end": "2025-12-18T10:48:26.548661",
+      "duration_seconds": 240.00635,
+      "commands": [
+        {
+          "time": "2025-12-18T10:44:34.069061",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T10:44:58.076900",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:45:35.568304",
+          "command": "cancela",
+          "recognized": "cancelar"
+        },
+        {
+          "time": "2025-12-18T10:45:42.070837",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:46:07.820410",
+          "command": "enviar",
+          "recognized": "enviar"
+        },
+        {
+          "time": "2025-12-18T10:47:34.830112",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:47:59.330706",
+          "command": "enviar",
+          "recognized": "enviar"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T10:44:55.079328",
+          "text": "héctor"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T10:49:03.150586",
+      "end": "2025-12-18T10:56:05.207810",
+      "duration_seconds": 422.057231,
+      "commands": [
+        {
+          "time": "2025-12-18T10:49:12.429151",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T10:50:24.692029",
+          "command": "opcion uno",
+          "recognized": "uno de estos pruebas de sonido"
+        },
+        {
+          "time": "2025-12-18T10:50:30.439341",
+          "command": "eliminar",
+          "recognized": "borrar"
+        },
+        {
+          "time": "2025-12-18T10:50:35.447725",
+          "command": "seleccion",
+          "recognized": "seleccionar polvo rap"
+        },
+        {
+          "time": "2025-12-18T10:50:37.938002",
+          "command": "eliminar",
+          "recognized": "borrar"
+        },
+        {
+          "time": "2025-12-18T10:50:51.938712",
+          "command": "seleccion",
+          "recognized": "seleccionar y borrar"
+        },
+        {
+          "time": "2025-12-18T10:51:20.688033",
+          "command": "opcion dos",
+          "recognized": "dos"
+        },
+        {
+          "time": "2025-12-18T10:52:24.944910",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T10:52:45.702398",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:52:58.204478",
+          "command": "cancela",
+          "recognized": "cancelar"
+        },
+        {
+          "time": "2025-12-18T10:55:01.201875",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:55:07.710208",
+          "command": "cancela",
+          "recognized": "cancela"
+        },
+        {
+          "time": "2025-12-18T10:55:15.283201",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T10:55:25.209105",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:55:38.963170",
+          "command": "cancela",
+          "recognized": "por cancela"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T10:52:42.958910",
+          "text": "héctor"
+        },
+        {
+          "time": "2025-12-18T10:54:57.784462",
+          "text": "vale proa"
+        },
+        {
+          "time": "2025-12-18T10:55:21.957558",
+          "text": "mercado"
+        },
+        {
+          "time": "2025-12-18T10:55:45.158642",
+          "text": "la"
+        }
+      ]
+    },
+    {
+      "start": "2025-12-18T10:52:19.289984",
+      "end": "2025-12-18T10:53:19.324786",
+      "duration_seconds": 60.034814,
+      "commands": [
+        {
+          "time": "2025-12-18T10:52:25.226131",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T10:52:45.881975",
+          "command": "dictado",
+          "recognized": "héctor estado"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T10:54:50.255672",
+      "end": "2025-12-18T10:55:50.290661",
+      "duration_seconds": 60.035008,
+      "commands": [
+        {
+          "time": "2025-12-18T10:55:01.044252",
+          "command": "dictado",
+          "recognized": "vale pruebas dictador"
+        },
+        {
+          "time": "2025-12-18T10:55:07.790726",
+          "command": "cancela",
+          "recognized": "cancela"
+        },
+        {
+          "time": "2025-12-18T10:55:15.042824",
+          "command": "claudia",
+          "recognized": "claudia"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T10:55:21.799583",
+          "text": "mercado"
+        },
+        {
+          "time": "2025-12-18T10:55:34.280041",
+          "text": "héctor"
+        },
+        {
+          "time": "2025-12-18T10:55:39.686070",
+          "text": "cancelado"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T10:56:11.833619",
+      "end": "2025-12-18T11:00:11.890311",
+      "duration_seconds": 240.056695,
+      "commands": [
+        {
+          "time": "2025-12-18T10:56:22.184483",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T10:56:32.933576",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T10:57:13.463908",
+          "command": "enviar",
+          "recognized": "enviar"
+        },
+        {
+          "time": "2025-12-18T10:59:48.223670",
+          "command": "claudia",
+          "recognized": "claudia"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T10:56:17.264178",
+          "text": "claudio"
+        },
+        {
+          "time": "2025-12-18T10:59:40.266711",
+          "text": "lo veo"
+        },
+        {
+          "time": "2025-12-18T10:59:43.751430",
+          "text": "claudio"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T11:00:20.729872",
+      "end": "2025-12-18T11:03:12.472017",
+      "duration_seconds": 171.742153,
+      "commands": [
+        {
+          "time": "2025-12-18T11:00:27.582180",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T11:00:33.833576",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T11:01:01.818588",
+          "command": "cancela",
+          "recognized": "la cancela"
+        },
+        {
+          "time": "2025-12-18T11:01:29.386440",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T11:01:47.657339",
+          "command": "enviar",
+          "recognized": "enviar"
+        },
+        {
+          "time": "2025-12-18T11:02:46.776373",
+          "command": "enter",
+          "recognized": "enter"
+        },
+        {
+          "time": "2025-12-18T11:02:49.742522",
+          "command": "enter",
+          "recognized": "enter"
+        },
+        {
+          "time": "2025-12-18T11:02:52.350755",
+          "command": "enter",
+          "recognized": "enter"
+        },
+        {
+          "time": "2025-12-18T11:02:57.415008",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T11:03:00.440169",
+          "command": "cancela",
+          "recognized": "cancelar"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T11:01:19.808896",
+          "text": "richard"
+        },
+        {
+          "time": "2025-12-18T11:01:23.736259",
+          "text": "hoy"
+        },
+        {
+          "time": "2025-12-18T11:03:04.682852",
+          "text": "cancelar"
+        }
+      ]
+    },
+    {
+      "start": "2025-12-18T11:03:16.627162",
+      "end": "2025-12-18T11:08:16.673641",
+      "duration_seconds": 300.046487,
+      "commands": [
+        {
+          "time": "2025-12-18T11:03:21.925718",
+          "command": "dictado",
+          "recognized": "estado"
+        },
+        {
+          "time": "2025-12-18T11:03:25.664564",
+          "command": "cancela",
+          "recognized": "cancelar"
+        },
+        {
+          "time": "2025-12-18T11:03:32.413197",
+          "command": "enter",
+          "recognized": "enter",
+          "attempts": [
+            "entre"
+          ]
+        },
+        {
+          "time": "2025-12-18T11:03:35.661382",
+          "command": "enter",
+          "recognized": "center"
+        },
+        {
+          "time": "2025-12-18T11:03:38.409466",
+          "command": "enter",
+          "recognized": "enter"
+        },
+        {
+          "time": "2025-12-18T11:03:40.912525",
+          "command": "enter",
+          "recognized": "center"
+        },
+        {
+          "time": "2025-12-18T11:03:43.410058",
+          "command": "enter",
+          "recognized": "enter"
+        },
+        {
+          "time": "2025-12-18T11:03:52.223847",
+          "command": "opcion uno",
+          "recognized": "opción uno"
+        },
+        {
+          "time": "2025-12-18T11:03:55.481818",
+          "command": "opcion uno",
+          "recognized": "opción uno"
+        },
+        {
+          "time": "2025-12-18T11:03:59.138320",
+          "command": "opcion uno",
+          "recognized": "uno"
+        },
+        {
+          "time": "2025-12-18T11:04:02.440647",
+          "command": "opcion uno",
+          "recognized": "uno"
+        },
+        {
+          "time": "2025-12-18T11:04:05.446921",
+          "command": "opcion uno",
+          "recognized": "uno"
+        },
+        {
+          "time": "2025-12-18T11:04:08.511603",
+          "command": "opcion dos",
+          "recognized": "dos"
+        },
+        {
+          "time": "2025-12-18T11:04:11.729242",
+          "command": "opcion dos",
+          "recognized": "dos"
+        },
+        {
+          "time": "2025-12-18T11:04:15.096430",
+          "command": "opcion dos",
+          "recognized": "opción dos"
+        },
+        {
+          "time": "2025-12-18T11:04:18.749922",
+          "command": "opcion dos",
+          "recognized": "opción dos"
+        },
+        {
+          "time": "2025-12-18T11:04:23.700976",
+          "command": "claudia",
+          "recognized": "claudia"
+        },
+        {
+          "time": "2025-12-18T11:04:28.971538",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T11:04:44.196769",
+          "command": "enviar",
+          "recognized": "enviar"
+        },
+        {
+          "time": "2025-12-18T11:05:35.201707",
+          "command": "pausa",
+          "recognized": "pausar",
+          "attempts": [
+            "broussard"
+          ]
+        },
+        {
+          "time": "2025-12-18T11:06:51.961346",
+          "command": "reanuda",
+          "recognized": "reanudar"
+        },
+        {
+          "time": "2025-12-18T11:07:05.727700",
+          "command": "dictado",
+          "recognized": "dictado"
+        },
+        {
+          "time": "2025-12-18T11:07:34.210898",
+          "command": "enviar",
+          "recognized": "enviar"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T11:03:29.909838",
+          "text": "entre"
+        },
+        {
+          "time": "2025-12-18T11:05:25.119844",
+          "text": "famosa"
+        },
+        {
+          "time": "2025-12-18T11:05:28.484788",
+          "text": "opción"
+        },
+        {
+          "time": "2025-12-18T11:05:32.458545",
+          "text": "broussard"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T11:10:17.764873",
+      "end": "2025-12-18T11:17:08.485105",
+      "duration_seconds": 410.720244,
+      "commands": [
+        {
+          "time": "2025-12-18T11:11:17.339039",
+          "command": "claudia",
+          "recognized": "claudio claudio",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:11:25.378903",
+          "command": "claudia",
+          "recognized": "claudia",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:12:02.720449",
+          "command": "dictado",
+          "recognized": "dictador",
+          "model": "es-0.42",
+          "attempts": [
+            "víctor"
+          ]
+        },
+        {
+          "time": "2025-12-18T11:12:11.741996",
+          "command": "cancela",
+          "recognized": "cancelar",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:12:23.549099",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:12:37.407395",
+          "command": "listo",
+          "recognized": "lista",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:13:38.380172",
+          "command": "claudia",
+          "recognized": "claudio",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:13:42.373372",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:14:02.222104",
+          "command": "enviar",
+          "recognized": "enviar",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:14:56.907491",
+          "command": "claudia",
+          "recognized": "claudio",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:15:01.907680",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:15:17.009861",
+          "command": "enviar",
+          "recognized": "enviar",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:16:15.292456",
+          "command": "claudia",
+          "recognized": "claudia",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:16:32.652014",
+          "command": "claudia",
+          "recognized": "claudia",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:16:48.664093",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "es-0.42"
+        },
+        {
+          "time": "2025-12-18T11:16:58.023307",
+          "command": "cancela",
+          "recognized": "cancela",
+          "model": "es-0.42"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T11:11:00.938758",
+          "text": "club"
+        },
+        {
+          "time": "2025-12-18T11:11:58.822866",
+          "text": "víctor"
+        },
+        {
+          "time": "2025-12-18T11:12:17.081913",
+          "text": "néctar"
+        },
+        {
+          "time": "2025-12-18T11:12:52.276956",
+          "text": "bien"
+        },
+        {
+          "time": "2025-12-18T11:15:57.370118",
+          "text": "rappel"
+        },
+        {
+          "time": "2025-12-18T11:16:20.837713",
+          "text": "tal"
+        },
+        {
+          "time": "2025-12-18T11:16:25.496758",
+          "text": "néctar"
+        }
+      ]
+    },
+    {
+      "start": "2025-12-18T11:16:05.334752",
+      "end": "2025-12-18T11:17:04.536782",
+      "duration_seconds": 59.202037,
+      "commands": [
+        {
+          "time": "2025-12-18T11:16:24.766130",
+          "command": "tab",
+          "recognized": "estaba",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:16:32.010423",
+          "command": "claudia",
+          "recognized": "claudia",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:16:48.129453",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:16:57.260081",
+          "command": "cancela",
+          "recognized": "cancelar",
+          "model": "small"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T11:16:16.137128",
+          "text": "gobierno"
+        }
+      ]
+    },
+    {
+      "start": "2025-12-18T11:21:33.352779",
+      "end": "2025-12-18T11:23:33.356674",
+      "duration_seconds": 120.003903,
+      "commands": [
+        {
+          "time": "2025-12-18T11:21:43.498954",
+          "command": "claudia",
+          "recognized": "claudia",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:21:49.504477",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:22:06.007707",
+          "command": "dictado",
+          "recognized": "dictadura",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:22:26.878856",
+          "command": "listo",
+          "recognized": "listo",
+          "model": "small"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T11:21:52.403926",
+          "text": "fender"
+        },
+        {
+          "time": "2025-12-18T11:23:08.885209",
+          "text": "vale es que la prueba vez que"
+        },
+        {
+          "time": "2025-12-18T11:23:19.752589",
+          "text": "vale precio vasco escribían los crímenes cruel"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T11:24:25.949709",
+      "end": "2025-12-18T11:25:25.951246",
+      "duration_seconds": 60.001541,
+      "commands": [
+        {
+          "time": "2025-12-18T11:24:35.338965",
+          "command": "claudia",
+          "recognized": "claudia",
+          "model": "small",
+          "attempts": [
+            "romeo"
+          ]
+        },
+        {
+          "time": "2025-12-18T11:24:38.969931",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:24:42.718668",
+          "command": "cancela",
+          "recognized": "cancelar",
+          "model": "small"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T11:24:32.474420",
+          "text": "romeo"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T11:27:19.301270",
+      "end": "2025-12-18T11:28:19.303583",
+      "duration_seconds": 60.002319,
+      "commands": [
+        {
+          "time": "2025-12-18T11:27:25.974234",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:27:30.719131",
+          "command": "cancela",
+          "recognized": "cancelar",
+          "model": "small"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T11:33:16.879590",
+      "end": "2025-12-18T11:34:16.880458",
+      "duration_seconds": 60.000872,
+      "commands": [
+        {
+          "time": "2025-12-18T11:33:27.827766",
+          "command": "claudia",
+          "recognized": "claudia",
+          "model": "small",
+          "attempts": [
+            "propio"
+          ]
+        },
+        {
+          "time": "2025-12-18T11:33:31.950153",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:33:48.452366",
+          "command": "listo",
+          "recognized": "gracias un dictado y luego dices listo",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:33:51.205427",
+          "command": "opcion uno",
+          "recognized": "sin no estás en uno",
+          "model": "small"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T11:33:22.584075",
+          "text": "veo"
+        },
+        {
+          "time": "2025-12-18T11:33:25.202982",
+          "text": "propio"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T11:34:45.269073",
+      "end": "2025-12-18T11:38:45.276779",
+      "duration_seconds": 240.00771,
+      "commands": [
+        {
+          "time": "2025-12-18T11:36:26.943691",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:36:33.690046",
+          "command": "enviar",
+          "recognized": "enviar",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:36:39.962092",
+          "command": "dictado",
+          "recognized": "estado",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:36:55.059713",
+          "command": "enviar",
+          "recognized": "enviar",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:37:31.309912",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:37:37.948884",
+          "command": "enter",
+          "recognized": "gente enter",
+          "model": "small",
+          "attempts": [
+            "este"
+          ]
+        },
+        {
+          "time": "2025-12-18T11:37:42.817431",
+          "command": "enter",
+          "recognized": "entero",
+          "model": "small",
+          "attempts": [
+            "chapter"
+          ]
+        },
+        {
+          "time": "2025-12-18T11:37:50.191001",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "small",
+          "attempts": [
+            "etc",
+            "etc"
+          ]
+        },
+        {
+          "time": "2025-12-18T11:37:54.819378",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "small",
+          "attempts": [
+            "este"
+          ]
+        },
+        {
+          "time": "2025-12-18T11:37:59.314564",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "small",
+          "attempts": [
+            "cantar"
+          ]
+        },
+        {
+          "time": "2025-12-18T11:38:01.942374",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:38:06.065586",
+          "command": "enter",
+          "recognized": "intro",
+          "model": "small",
+          "attempts": [
+            "este"
+          ]
+        },
+        {
+          "time": "2025-12-18T11:38:20.203342",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "small",
+          "attempts": [
+            "centro",
+            "dentro"
+          ]
+        },
+        {
+          "time": "2025-12-18T11:38:22.439033",
+          "command": "enter",
+          "recognized": "intro",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:38:25.059501",
+          "command": "enter",
+          "recognized": "entera",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:38:27.191113",
+          "command": "enter",
+          "recognized": "intro",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:38:37.060479",
+          "command": "ayuda",
+          "recognized": "ayuda",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:38:40.809846",
+          "command": "ayuda",
+          "recognized": "ayuda",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:38:42.810000",
+          "command": "ayuda",
+          "recognized": "ayuda",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:38:45.188180",
+          "command": "ayuda",
+          "recognized": "ayuda",
+          "model": "small"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T11:37:33.695803",
+          "text": "este"
+        },
+        {
+          "time": "2025-12-18T11:37:40.448997",
+          "text": "chapter"
+        },
+        {
+          "time": "2025-12-18T11:37:45.194811",
+          "text": "etc"
+        },
+        {
+          "time": "2025-12-18T11:37:47.579762",
+          "text": "etc"
+        },
+        {
+          "time": "2025-12-18T11:37:52.440898",
+          "text": "este"
+        },
+        {
+          "time": "2025-12-18T11:37:56.942149",
+          "text": "cantar"
+        },
+        {
+          "time": "2025-12-18T11:38:04.447300",
+          "text": "este"
+        },
+        {
+          "time": "2025-12-18T11:38:08.443189",
+          "text": "centro"
+        },
+        {
+          "time": "2025-12-18T11:38:10.819936",
+          "text": "control"
+        },
+        {
+          "time": "2025-12-18T11:38:13.314754",
+          "text": "centro"
+        },
+        {
+          "time": "2025-12-18T11:38:15.441106",
+          "text": "centro"
+        },
+        {
+          "time": "2025-12-18T11:38:17.813500",
+          "text": "dentro"
+        },
+        {
+          "time": "2025-12-18T11:38:29.564105",
+          "text": "inclu"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T11:38:48.514930",
+      "end": "2025-12-18T11:43:36.362745",
+      "duration_seconds": 287.847819,
+      "commands": [
+        {
+          "time": "2025-12-18T11:38:56.838042",
+          "command": "claudia",
+          "recognized": "claudia",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:39:00.219739",
+          "command": "claudia",
+          "recognized": "claudio",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:39:02.591374",
+          "command": "claudia",
+          "recognized": "claudia",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:39:05.218402",
+          "command": "claudia",
+          "recognized": "claudia",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:39:46.090611",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "small",
+          "attempts": [
+            "de"
+          ]
+        },
+        {
+          "time": "2025-12-18T11:40:02.839191",
+          "command": "listo",
+          "recognized": "hagamos una lista con los horas posibles y casos de uso",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:40:04.980621",
+          "command": "opcion dos",
+          "recognized": "más comandos que de luto",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:40:08.338411",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:40:25.844221",
+          "command": "enviar",
+          "recognized": "enviar",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:40:30.983404",
+          "command": "enter",
+          "recognized": "enter",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T11:41:41.388940",
+          "command": "pausa",
+          "recognized": "pausa",
+          "model": "small",
+          "attempts": [
+            "aunque"
+          ]
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T11:39:18.726712",
+          "text": "cromo"
+        },
+        {
+          "time": "2025-12-18T11:39:42.722166",
+          "text": "de"
+        },
+        {
+          "time": "2025-12-18T11:40:55.854337",
+          "text": "en"
+        },
+        {
+          "time": "2025-12-18T11:41:12.000119",
+          "text": "comparto"
+        },
+        {
+          "time": "2025-12-18T11:41:26.939265",
+          "text": "como"
+        },
+        {
+          "time": "2025-12-18T11:41:37.042718",
+          "text": "aunque"
+        }
+      ]
+    },
+    {
+      "start": "2025-12-18T12:06:47.994842",
+      "end": "2025-12-18T12:07:48.010246",
+      "duration_seconds": 60.015408,
+      "commands": [
+        {
+          "time": "2025-12-18T12:06:54.674532",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T12:07:11.672919",
+          "command": "enviar",
+          "recognized": "enviar",
+          "model": "small"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T12:07:41.943031",
+          "text": "los chicos"
+        }
+      ],
+      "active": true
+    }
+  ],
+  "stats": {
+    "total_sessions": 21,
+    "total_commands": 155,
+    "total_ignored": 77,
+    "command_frequency": {
+      "dictado": 39,
+      "claudia": 30,
+      "enter": 23,
+      "enviar": 19,
+      "cancela": 13,
+      "opcion uno": 7,
+      "opcion dos": 6,
+      "listo": 5,
+      "ayuda": 4,
+      "eliminar": 2,
+      "seleccion": 2,
+      "pausa": 2,
+      "opcion una": 1,
+      "reanuda": 1,
+      "tab": 1
+    },
+    "ignored_frequency": {
+      "mercado": 3,
+      "héctor": 3,
+      "este": 3,
+      "centro": 3,
+      "vale": 2,
+      "claudio": 2,
+      "néctar": 2,
+      "etc": 2,
+      "clave": 1,
+      "lector": 1,
+      "ah": 1,
+      "aquí": 1,
+      "vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale": 1,
+      "cabe": 1,
+      "novia": 1,
+      "claro y el": 1,
+      "estado": 1,
+      "apple": 1,
+      "vale vale vale vale vale": 1,
+      "título": 1,
+      "vale ahora prueba prueba prueba prueba prueba prueba": 1,
+      "bueno bueno": 1,
+      "otra cosa": 1,
+      "um": 1,
+      "fama": 1,
+      "prueba": 1,
+      "vale prueba prueba prueba prueba": 1,
+      "todavía": 1,
+      "espalda": 1,
+      "afectado": 1,
+      "vale proa": 1,
+      "la": 1,
+      "cancelado": 1,
+      "lo veo": 1,
+      "richard": 1,
+      "hoy": 1,
+      "cancelar": 1,
+      "entre": 1,
+      "famosa": 1,
+      "opción": 1,
+      "broussard": 1,
+      "club": 1,
+      "víctor": 1,
+      "bien": 1,
+      "rappel": 1,
+      "tal": 1,
+      "gobierno": 1,
+      "fender": 1,
+      "vale es que la prueba vez que": 1,
+      "vale precio vasco escribían los crímenes cruel": 1
+    }
+  }
+}
