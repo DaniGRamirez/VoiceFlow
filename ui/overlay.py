@@ -247,8 +247,9 @@ class Overlay(QWidget):
             self._target_size = self._idle_size * 0.9  # Un poco más pequeño
             self._target_squash = 1.0  # Cuadrado/círculo para diferenciarlo
         else:  # IDLE
-            # En IDLE: el tamaño base crece con el mic - SUPER EXAGERADO
-            self._target_size = self._idle_size + self._smoothed_mic * 80  # era 40
+            # En IDLE: el tamaño base crece con el mic (moderado, con límite)
+            mic_growth = min(self._smoothed_mic * 25, 15)  # Máximo 15px de crecimiento
+            self._target_size = self._idle_size + mic_growth
             self._target_squash = 2.2  # Óvalo muy horizontal/aplanado
 
         # Interpolación del tamaño - ASIMÉTRICA: sube rápido, baja lento
@@ -398,9 +399,9 @@ class Overlay(QWidget):
             rx = radius * self._current_squash
             ry = radius / self._current_squash
 
-            # En IDLE: el tamaño reacciona al micrófono - MEGA EXAGERADO
+            # En IDLE: el tamaño reacciona al micrófono (moderado, con límite)
             if self._state == State.IDLE:
-                mic_pulse = 1.0 + self._smoothed_mic * 3.0  # Hasta 300% más grande con voz!
+                mic_pulse = 1.0 + min(self._smoothed_mic * 0.8, 0.5)  # Máximo 50% más grande
                 rx *= mic_pulse
                 ry *= mic_pulse
 
@@ -422,13 +423,13 @@ class Overlay(QWidget):
                 else:
                     border_color = QColor(self.IDLE_BORDER)
 
-                # En IDLE: el borde reacciona al micrófono - MEGA EXAGERADO
+                # En IDLE: el borde reacciona al micrófono (moderado, con límite)
                 if self._state == State.IDLE:
                     # Opacidad base + boost por micrófono
-                    mic_opacity = min(1.0, self._border_opacity + self._smoothed_mic * 1.0)
+                    mic_opacity = min(1.0, self._border_opacity + self._smoothed_mic * 0.5)
                     border_color.setAlphaF(mic_opacity)
-                    # Grosor varía con el micrófono (2 a 20!) - MEGA GRUESO
-                    border_width = 2.0 + self._smoothed_mic * 18.0
+                    # Grosor varía con el micrófono (1.5 a 4px máximo)
+                    border_width = 1.5 + min(self._smoothed_mic * 3.0, 2.5)
                     painter.setPen(QPen(border_color, border_width))
                 else:
                     border_color.setAlphaF(self._border_opacity)

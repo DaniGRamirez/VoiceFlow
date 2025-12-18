@@ -13,9 +13,9 @@ Las variantes son palabras que Vosk reconoce y queremos aceptar.
 """
 
 # Comandos de navegación
-ENTER_ALIASES = ["enter", "intro", "entrar", "entró", "center"]
+ENTER_ALIASES = ["enter", "intro", "entrar", "entró", "center", "entre", "entero", "entera"]
 ESCAPE_ALIASES = ["escape", "escapar", "escapé", "scape"]
-TAB_ALIASES = ["tab", "tabulador"]
+TAB_ALIASES = ["tab", "tabulador", "estaba"]
 
 # Flechas
 ARRIBA_ALIASES = ["arriba", "sube", "subir"]
@@ -38,7 +38,7 @@ INICIO_ALIASES = ["inicio"]
 FIN_ALIASES = ["fin", "final"]
 
 # Dictado
-DICTADO_ALIASES = ["dictado", "dicta", "dictando", "estado", "dictador", "héctor", "mercado", "víctor", "néctar"]
+DICTADO_ALIASES = ["dictado", "dicta", "dictando", "estado", "dictador", "héctor", "mercado", "víctor", "néctar", "lector", "dictadura"]
 LISTO_ALIASES = ["listo", "lista", "listos"]
 CANCELA_ALIASES = ["cancela", "cancelar", "cancelá", "cancelo", "cancelado"]
 ENVIAR_ALIASES = ["enviar", "envía", "envia", "envío", "manda", "mandar"]

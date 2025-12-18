@@ -1372,8 +1372,8 @@
     },
     {
       "start": "2025-12-18T12:06:47.994842",
-      "end": "2025-12-18T12:07:48.010246",
-      "duration_seconds": 60.015408,
+      "end": "2025-12-18T12:19:48.029197",
+      "duration_seconds": 780.034359,
       "commands": [
         {
           "time": "2025-12-18T12:06:54.674532",
@@ -1392,24 +1392,245 @@
         {
           "time": "2025-12-18T12:07:41.943031",
           "text": "los chicos"
+        },
+        {
+          "time": "2025-12-18T12:15:16.924729",
+          "text": "como"
+        },
+        {
+          "time": "2025-12-18T12:16:07.942979",
+          "text": "um"
+        },
+        {
+          "time": "2025-12-18T12:19:09.474067",
+          "text": "nuevo"
+        },
+        {
+          "time": "2025-12-18T12:19:14.590125",
+          "text": "vender"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T13:05:51.961857",
+      "end": "2025-12-18T13:15:51.987140",
+      "duration_seconds": 600.025286,
+      "commands": [
+        {
+          "time": "2025-12-18T13:11:02.938280",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "small",
+          "attempts": [
+            "lector"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:11:19.196172",
+          "command": "cancela",
+          "recognized": "cancelar",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:11:22.568571",
+          "command": "dictado",
+          "recognized": "víctor",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:11:31.950008",
+          "command": "listo",
+          "recognized": "listo",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:11:52.824813",
+          "command": "dictado",
+          "recognized": "víctor",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:12:05.818362",
+          "command": "enviar",
+          "recognized": "enviar",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:13:19.202391",
+          "command": "enter",
+          "recognized": "entero",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:13:35.089274",
+          "command": "opcion dos",
+          "recognized": "dos",
+          "model": "small",
+          "attempts": [
+            "from"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:15:00.065671",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "small",
+          "attempts": [
+            "esta"
+          ]
+        },
+        {
+          "time": "2025-12-18T13:15:22.819306",
+          "command": "enviar",
+          "recognized": "enviar",
+          "model": "small"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T13:10:59.826333",
+          "text": "lector"
+        },
+        {
+          "time": "2025-12-18T13:11:42.084247",
+          "text": "ambos grupos"
+        },
+        {
+          "time": "2025-12-18T13:12:15.899462",
+          "text": "forma"
+        },
+        {
+          "time": "2025-12-18T13:12:21.006498",
+          "text": "los"
+        },
+        {
+          "time": "2025-12-18T13:12:28.615422",
+          "text": "económico"
+        },
+        {
+          "time": "2025-12-18T13:12:33.640281",
+          "text": "grammy latino americano"
+        },
+        {
+          "time": "2025-12-18T13:12:38.783439",
+          "text": "como"
+        },
+        {
+          "time": "2025-12-18T13:12:53.844564",
+          "text": "familia"
+        },
+        {
+          "time": "2025-12-18T13:13:25.774267",
+          "text": "gracias"
+        },
+        {
+          "time": "2025-12-18T13:13:27.884991",
+          "text": "okay"
+        },
+        {
+          "time": "2025-12-18T13:13:31.200928",
+          "text": "from"
+        },
+        {
+          "time": "2025-12-18T13:13:40.115602",
+          "text": "familia"
+        },
+        {
+          "time": "2025-12-18T13:13:45.258873",
+          "text": "fue así"
+        },
+        {
+          "time": "2025-12-18T13:13:50.503104",
+          "text": "por otra causa"
+        },
+        {
+          "time": "2025-12-18T13:14:05.585508",
+          "text": "correcto"
+        },
+        {
+          "time": "2025-12-18T13:14:10.630372",
+          "text": "los centro urbano"
+        },
+        {
+          "time": "2025-12-18T13:14:19.490061",
+          "text": "en internet"
+        },
+        {
+          "time": "2025-12-18T13:14:32.764665",
+          "text": "registro particular"
+        },
+        {
+          "time": "2025-12-18T13:14:37.766898",
+          "text": "ejemplo"
+        },
+        {
+          "time": "2025-12-18T13:14:44.336345",
+          "text": "en otra forma"
+        },
+        {
+          "time": "2025-12-18T13:14:54.702550",
+          "text": "metal"
+        },
+        {
+          "time": "2025-12-18T13:14:57.319208",
+          "text": "esta"
+        },
+        {
+          "time": "2025-12-18T13:15:33.841648",
+          "text": "el"
+        },
+        {
+          "time": "2025-12-18T13:15:38.961531",
+          "text": "tanto"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T13:16:27.206071",
+      "end": "2025-12-18T13:19:27.211138",
+      "duration_seconds": 180.005072,
+      "commands": [
+        {
+          "time": "2025-12-18T13:16:41.150316",
+          "command": "claudia",
+          "recognized": "claudia",
+          "model": "small"
+        },
+        {
+          "time": "2025-12-18T13:19:22.146820",
+          "command": "dictado",
+          "recognized": "dictado",
+          "model": "small"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T13:16:46.479840",
+          "text": "vale"
+        },
+        {
+          "time": "2025-12-18T13:19:11.151653",
+          "text": "vale vale vale vale"
         }
       ],
       "active": true
     }
   ],
   "stats": {
-    "total_sessions": 21,
-    "total_commands": 155,
-    "total_ignored": 77,
+    "total_sessions": 23,
+    "total_commands": 167,
+    "total_ignored": 107,
     "command_frequency": {
-      "dictado": 39,
-      "claudia": 30,
-      "enter": 23,
-      "enviar": 19,
-      "cancela": 13,
+      "dictado": 44,
+      "claudia": 31,
+      "enter": 24,
+      "enviar": 21,
+      "cancela": 14,
       "opcion uno": 7,
-      "opcion dos": 6,
-      "listo": 5,
+      "opcion dos": 7,
+      "listo": 6,
       "ayuda": 4,
       "eliminar": 2,
       "seleccion": 2,
@@ -1419,16 +1640,19 @@
       "tab": 1
     },
     "ignored_frequency": {
+      "vale": 3,
       "mercado": 3,
       "héctor": 3,
       "este": 3,
       "centro": 3,
-      "vale": 2,
+      "como": 3,
+      "lector": 2,
+      "um": 2,
       "claudio": 2,
       "néctar": 2,
       "etc": 2,
+      "familia": 2,
       "clave": 1,
-      "lector": 1,
       "ah": 1,
       "aquí": 1,
       "vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale vale": 1,
@@ -1442,7 +1666,6 @@
       "vale ahora prueba prueba prueba prueba prueba prueba": 1,
       "bueno bueno": 1,
       "otra cosa": 1,
-      "um": 1,
       "fama": 1,
       "prueba": 1,
       "vale prueba prueba prueba prueba": 1,
@@ -1466,9 +1689,7 @@
       "rappel": 1,
       "tal": 1,
       "gobierno": 1,
-      "fender": 1,
-      "vale es que la prueba vez que": 1,
-      "vale precio vasco escribían los crímenes cruel": 1
+      "fender": 1
     }
   }
 }
