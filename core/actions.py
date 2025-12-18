@@ -1,4 +1,5 @@
 import atexit
+import re
 import signal
 import subprocess
 import sys
@@ -6,6 +7,55 @@ import time
 
 import pyautogui
 import pyperclip
+
+# Importar aliases para limpiar comandos del texto dictado
+from config.aliases import (
+    LISTO_ALIASES, CANCELA_ALIASES, ENVIAR_ALIASES, AYUDA_ALIASES
+)
+
+# Comandos que pueden aparecer al final del dictado y deben eliminarse
+COMANDOS_DICTADO = set()
+for aliases in [LISTO_ALIASES, CANCELA_ALIASES, ENVIAR_ALIASES, AYUDA_ALIASES]:
+    COMANDOS_DICTADO.update(alias.lower() for alias in aliases)
+
+
+def _limpiar_comandos_finales(texto: str, num_palabras: int = 5) -> str:
+    """
+    Elimina comandos de VoiceFlow de las últimas N palabras del texto.
+
+    Args:
+        texto: El texto dictado
+        num_palabras: Número de palabras finales a revisar
+
+    Returns:
+        Texto limpio sin comandos al final
+    """
+    if not texto:
+        return texto
+
+    # Separar en palabras
+    palabras = texto.split()
+    if not palabras:
+        return texto
+
+    # Revisar las últimas N palabras
+    inicio_revision = max(0, len(palabras) - num_palabras)
+    palabras_finales = palabras[inicio_revision:]
+    palabras_limpias = []
+
+    for palabra in palabras_finales:
+        # Limpiar puntuación para comparar
+        palabra_limpia = re.sub(r'[.,!?;:]', '', palabra.lower())
+        if palabra_limpia not in COMANDOS_DICTADO:
+            palabras_limpias.append(palabra)
+
+    # Reconstruir texto
+    texto_limpio = ' '.join(palabras[:inicio_revision] + palabras_limpias)
+
+    # Limpiar puntos finales que quedan huérfanos
+    texto_limpio = re.sub(r'\s*[.,]+\s*$', '', texto_limpio).strip()
+
+    return texto_limpio
 
 
 NUMEROS = {
@@ -184,14 +234,18 @@ if ($hwnd) {
         pyautogui.keyUp('ctrl')
         time.sleep(self._dictation_release_delay)
 
-        # Limpiar "listo" del texto
+        # Seleccionar y copiar texto actual
         pyautogui.hotkey('ctrl', 'a')
         time.sleep(self._clipboard_delay)
         pyautogui.hotkey('ctrl', 'c')
         time.sleep(self._clipboard_delay)
 
         texto = pyperclip.paste()
-        texto_limpio = texto.lower().replace("listo", "").replace(".", "").strip()
+
+        # Limpiar comandos de las últimas 5 palabras
+        texto_limpio = _limpiar_comandos_finales(texto, num_palabras=5)
+
+        # Capitalizar primera letra si hay texto
         if texto_limpio:
             texto_limpio = texto_limpio[0].upper() + texto_limpio[1:] if len(texto_limpio) > 1 else texto_limpio.upper()
 
@@ -200,7 +254,7 @@ if ($hwnd) {
         self._wispr_active = False
 
     def _on_listo_winh(self):
-        """Termina dictado Win+H"""
+        """Termina dictado Win+H y limpia comandos del texto"""
         if not self._winh_active:
             return
 
@@ -209,8 +263,27 @@ if ($hwnd) {
             self._winh_active = False
             return
 
-        # Detener dictado de Windows (Escape o Win+H de nuevo)
+        # Detener dictado de Windows
         pyautogui.press('escape')
+        time.sleep(self._dictation_release_delay)
+
+        # Seleccionar y copiar texto actual
+        pyautogui.hotkey('ctrl', 'a')
+        time.sleep(self._clipboard_delay)
+        pyautogui.hotkey('ctrl', 'c')
+        time.sleep(self._clipboard_delay)
+
+        texto = pyperclip.paste()
+
+        # Limpiar comandos de las últimas 5 palabras
+        texto_limpio = _limpiar_comandos_finales(texto, num_palabras=5)
+
+        # Capitalizar primera letra si hay texto
+        if texto_limpio:
+            texto_limpio = texto_limpio[0].upper() + texto_limpio[1:] if len(texto_limpio) > 1 else texto_limpio.upper()
+
+        pyperclip.copy(texto_limpio)
+        pyautogui.hotkey('ctrl', 'v')
         self._winh_active = False
 
     def on_cancela(self):
@@ -283,26 +356,70 @@ if ($hwnd) {
         pyautogui.press('delete')
         self._last_action = self.on_borra_todo
 
-    def on_ayuda(self, state, registry):
+    def on_ayuda(self, state, registry, overlay=None):
         """Muestra comandos disponibles en el estado actual"""
         from core.state import State
 
-        state_names = {
-            State.IDLE: "IDLE",
-            State.DICTATING: "DICTANDO",
-            State.PROCESSING: "PROCESANDO"
+        # Descripciones de comandos
+        descriptions = {
+            "claudia": "VSCode + Chat",
+            "claudia dictado": "VSCode + Chat + Dictado",
+            "dictado": "Activa dictado",
+            "listo": "Termina dictado",
+            "cancela": "Cancela dictado",
+            "enviar": "Envía mensaje",
+            "enter": "Pulsa Enter",
+            "seleccion": "Selecciona todo",
+            "eliminar": "Borra selección",
+            "borra todo": "Borra todo",
+            "escape": "Pulsa Escape",
+            "tab": "Tabulador",
+            "aceptar": "Pulsa Enter",
+            "copiar": "Ctrl+C",
+            "pegar": "Ctrl+V",
+            "deshacer": "Ctrl+Z",
+            "rehacer": "Ctrl+Y",
+            "guardar": "Ctrl+S",
+            "arriba": "Flecha arriba",
+            "abajo": "Flecha abajo",
+            "izquierda": "Flecha izquierda",
+            "derecha": "Flecha derecha",
+            "inicio": "Ir al inicio",
+            "fin": "Ir al final",
+            "repetir": "Repite acción",
+            "ayuda": "Muestra ayuda",
+            "pausa": "Pausa comandos",
+            "reanuda": "Reanuda comandos",
+            "reiniciar": "Reinicia VoiceFlow",
         }
 
-        print(f"\n{'=' * 40}")
-        print(f"  Comandos disponibles ({state_names.get(state, 'UNKNOWN')})")
-        print(f"{'=' * 40}")
-
+        # Recopilar comandos disponibles
+        commands = []
+        seen = set()
         for cmd in registry._commands:
             if state in cmd.allowed_states:
-                keywords = ", ".join(cmd.keywords)
-                print(f"  '{keywords}'")
+                keyword = cmd.keywords[0]
+                if keyword not in seen:
+                    seen.add(keyword)
+                    desc = descriptions.get(keyword, "")
+                    commands.append((keyword, desc))
 
-        print(f"{'=' * 40}\n")
+        # Mostrar en overlay si está disponible
+        if overlay:
+            overlay.show_help(commands)
+        else:
+            # Fallback a consola
+            state_names = {
+                State.IDLE: "IDLE",
+                State.DICTATING: "DICTANDO",
+                State.PROCESSING: "PROCESANDO"
+            }
+            print(f"\n{'=' * 40}")
+            print(f"  Comandos disponibles ({state_names.get(state, 'UNKNOWN')})")
+            print(f"{'=' * 40}")
+            for kw, desc in commands:
+                print(f"  '{kw}' - {desc}")
+            print(f"{'=' * 40}\n")
 
     def on_opcion(self, numero: int):
         """Pulsa un numero"""
@@ -365,6 +482,16 @@ if ($hwnd) {
         else:
             print("[INFO] No hay acción anterior para repetir")
 
+    def on_pausa(self):
+        """Pausa el reconocimiento de comandos"""
+        if self.debug_mode:
+            print("[DEBUG] on_pausa: Sistema pausado")
+
+    def on_reanuda(self):
+        """Reanuda el reconocimiento de comandos"""
+        if self.debug_mode:
+            print("[DEBUG] on_reanuda: Sistema reanudado")
+
     def on_enviar(self, state_machine):
         """Termina dictado y pulsa Enter (listo + enter)"""
         from core.state import State
@@ -388,3 +515,17 @@ if ($hwnd) {
             pyautogui.press('escape')
             self._winh_active = False
             print("[SAFETY] Win+H cerrado")
+
+    def on_reiniciar(self):
+        """Reinicia la aplicación"""
+        import os
+        print("[INFO] Reiniciando VoiceFlow...")
+        self.release_keys()
+        # Lanzar nuevo proceso y salir del actual
+        python = sys.executable
+        script = os.path.join(os.path.dirname(os.path.dirname(__file__)), "main.py")
+        # Pasar los mismos argumentos
+        args = [python, script] + sys.argv[1:]
+        subprocess.Popen(args, creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == 'win32' else 0)
+        # Salir del proceso actual
+        os._exit(0)

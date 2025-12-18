@@ -6,6 +6,7 @@ class State(Enum):
     IDLE = auto()          # Escuchando comandos globales
     DICTATING = auto()     # Modo Claudia activo, esperando listo/cancela
     PROCESSING = auto()    # Ejecutando accion
+    PAUSED = auto()        # Pausado, solo acepta "reanuda"
 
 
 class StateMachine:

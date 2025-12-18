@@ -8,7 +8,7 @@ DEFAULT_CONFIG = {
     "model_path": os.path.join(BASE_DIR, "models", "vosk-model-es-0.42"),
 
     # Modo de dictado: "wispr" o "winh" (Win+H de Windows)
-    "dictation_mode": "wispr",
+    "dictation_mode": "winh",
 
     "overlay": {
         "size": 40,
@@ -35,6 +35,12 @@ DEFAULT_CONFIG = {
         "dictation_release_delay": 0.5,
         "clipboard_delay": 0.1,
         "key_delay": 0.1
+    },
+
+    "audio": {
+        "gain": 2.0,  # Multiplicador de volumen para Vosk (1.0 = normal, 2.0 = doble)
+        "mic_threshold": 1500,  # Umbral para normalización visual (menor = más sensible)
+        "blocksize": 2000  # Tamaño de fragmento de audio (2000=125ms, 4000=250ms) - menor = más responsivo
     }
 }
 
