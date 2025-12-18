@@ -397,10 +397,10 @@ def main():
         voice_thread = threading.Thread(target=engine.start, daemon=True)
         voice_thread.start()
 
-    # Loop principal de UI
+    # Loop principal de UI (PyQt6)
     try:
         if DEBUG_MODE:
-            # Modo debug: leer comandos del teclado
+            # Modo debug: leer comandos del teclado en thread separado
             def debug_input():
                 while True:
                     try:
@@ -416,8 +416,11 @@ def main():
             input_thread = threading.Thread(target=debug_input, daemon=True)
             input_thread.start()
 
-        while True:
-            overlay.update()
+        # PyQt6 usa app.exec() para el loop de eventos
+        from PyQt6.QtWidgets import QApplication
+        app = QApplication.instance()
+        if app:
+            app.exec()
     except KeyboardInterrupt:
         pass
     except Exception as e:

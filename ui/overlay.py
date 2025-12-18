@@ -1,575 +1,588 @@
-import customtkinter as ctk
-import queue
+"""
+VoiceFlow Overlay - El Organismo
+
+Un ente vivo que escucha, reacciona y responde.
+No es una interfaz, es una presencia.
+"""
+
 import math
+import sys
+from typing import Optional, Callable
+
+from PyQt6.QtWidgets import (
+    QApplication, QWidget, QMenu, QGraphicsDropShadowEffect,
+    QVBoxLayout, QHBoxLayout, QLabel, QPushButton
+)
+from PyQt6.QtCore import (
+    Qt, QTimer, pyqtSignal, QPoint, QPointF,
+    QPropertyAnimation, QEasingCurve, QRectF
+)
+from PyQt6.QtGui import (
+    QPainter, QColor, QPen, QBrush, QPainterPath,
+    QRadialGradient, QFont
+)
 
 from core.state import State
 from config.settings import save_config, load_config
+from ui.easing import (
+    breathing_factor, organic_noise, lerp_smooth,
+    ease_out_elastic, ease_out_back, micro_vibration
+)
 
 
-# Configurar tema oscuro
-ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("dark-blue")
+class Overlay(QWidget):
+    """
+    El organismo vivo que representa VoiceFlow.
 
+    Principios:
+    - Nada aparece de golpe
+    - Nada desaparece sin despedirse
+    - Todo tiene inercia
+    - La UI no manda: responde
+    """
 
-class Overlay:
-    """Ventana flotante moderna con CustomTkinter"""
+    # Signals para comunicación thread-safe
+    state_signal = pyqtSignal(object)
+    flash_signal = pyqtSignal(str, int)
+    mic_level_signal = pyqtSignal(float)
 
+    # Paleta de colores (temperaturas, no señales)
     COLORS = {
-        State.IDLE: "#666666",       # Gris
-        State.DICTATING: "#E74C3C",  # Rojo (grabando)
-        State.PROCESSING: "#F5A623", # Amarillo
+        State.IDLE: ("#555555", "#666666"),      # Gris cálido
+        State.DICTATING: ("#C0392B", "#E74C3C"),  # Rojo vivo
+        State.PROCESSING: ("#8B7355", "#9A8262"), # Tierra pensativo
     }
 
-    SUCCESS_COLOR = "#7ED321"  # Verde
-    ERROR_COLOR = "#D0021B"    # Rojo
-    UNKNOWN_COLOR = "#F5A623"  # Amarillo - comando no reconocido
-
-    # Colores para pulse en idle
-    IDLE_COLOR_LIGHT = "#888888"
-    IDLE_COLOR_DARK = "#555555"
-
-    # Color para efecto de grabacion
-    RECORDING_COLOR_LIGHT = "#FF6B6B"
-    RECORDING_COLOR_DARK = "#C0392B"
+    SUCCESS_COLOR = "#2D5A27"  # Verde muy oscuro, sutil
+    ERROR_COLOR = "#5A2727"    # Rojo muy oscuro, sutil
 
     def __init__(self, size: int = 40, position: tuple = (1850, 50), opacity: float = 0.9):
-        self.size = size
+        # Crear QApplication si no existe
+        if QApplication.instance() is None:
+            self._app = QApplication(sys.argv)
+        else:
+            self._app = QApplication.instance()
+
+        super().__init__()
+
+        # Configuración base
+        self._base_size = size
+        self._current_size = float(size)
+        self._target_size = float(size)
+        self._display_size = float(size)
         self._opacity = opacity
-        self.root = ctk.CTk()
-        self._setup_window(position, opacity)
-        self._create_indicator()
+        self._position = position
+
+        # Estado del organismo
         self._state = State.IDLE
-
-        # Drag support
-        self._drag_data = {"x": 0, "y": 0}
-
-        # Queue para comunicacion thread-safe
-        self._ui_queue = queue.Queue()
-
-        # Animation state
-        self._animation_phase = 0.0
-        self._mic_level = 0.0
-        self._hint_window = None
-        self._flash_active = False
-
-        # Transicion de estados
-        self._transition_progress = 1.0  # 1.0 = transicion completa
         self._prev_state = State.IDLE
 
-        # Callbacks para hints (se configuran desde main.py)
+        # Animación
+        self._time = 0.0
+        self._phase = 0.0
+        self._mic_level = 0.0
+        self._smoothed_mic = 0.0
+        self._size_velocity = 0.0
+
+        # Color actual (para transiciones)
+        self._current_color = QColor("#555555")
+        self._target_color = QColor("#555555")
+
+        # Flash
+        self._flash_active = False
+        self._flash_color = None
+
+        # Transición de estado
+        self._transition_progress = 1.0
+
+        # Spores (pop-ups) activos
+        self._spores = []
+
+        # Hints
+        self._hint_window = None
         self._on_listo_callback = None
         self._on_cancela_callback = None
 
-        # Iniciar animacion
-        self._animate()
+        # Drag
+        self._drag_pos = None
 
-    def _setup_window(self, position: tuple, opacity: float):
-        self.root.overrideredirect(True)  # Sin bordes
-        self.root.attributes('-topmost', True)  # Siempre encima
-        self.root.attributes('-alpha', opacity)  # Transparencia
-        self.root.geometry(f"{self.size}x{self.size}+{position[0]}+{position[1]}")
+        # Setup
+        self._setup_window()
+        self._setup_shadow()
+        self._connect_signals()
+        self._start_animation()
 
-        # Hacer fondo transparente en Windows
-        self.root.configure(bg='black')
-        self.root.wm_attributes('-transparentcolor', 'black')
-
-        # Hacer la ventana draggable
-        self.root.bind('<Button-1>', self._start_drag)
-        self.root.bind('<B1-Motion>', self._on_drag)
-
-        # Click derecho para menu
-        self.root.bind('<Button-3>', self._show_menu)
-
-        # Tooltip al hover
-        self.root.bind('<Enter>', self._show_tooltip)
-        self.root.bind('<Leave>', self._hide_tooltip)
-        self._tooltip_window = None
-
-    def _create_indicator(self):
-        """Crea el indicador circular con canvas para animaciones suaves"""
-        self.canvas = ctk.CTkCanvas(
-            self.root,
-            width=self.size,
-            height=self.size,
-            highlightthickness=0,
-            bg='black'
+    def _setup_window(self):
+        """Configura la ventana transparente."""
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint |
+            Qt.WindowType.WindowStaysOnTopHint |
+            Qt.WindowType.Tool
         )
-        self.canvas.pack()
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setWindowOpacity(self._opacity)
 
-        # Circulo principal con borde suave
-        padding = 2
-        # Sombra/glow
-        self.glow = self.canvas.create_oval(
-            padding, padding,
-            self.size - padding, self.size - padding,
-            fill="#333333",
-            outline=""
-        )
+        # Margen amplio para glow y expansión del núcleo
+        # El núcleo puede crecer hasta base_size + 15px, y el glow es 1.4x
+        self._margin = 40
+        total_size = self._base_size + self._margin * 2
+        self.setFixedSize(total_size, total_size)
+        self.move(self._position[0], self._position[1])
 
-        # Arco indicador de nivel de mic (solo visible en DICTATING)
-        arc_padding = 1
-        self.mic_arc = self.canvas.create_arc(
-            arc_padding, arc_padding,
-            self.size - arc_padding, self.size - arc_padding,
-            start=90,
-            extent=0,  # Se actualiza dinamicamente
-            outline="#E74C3C",
-            width=3,
-            style="arc"
-        )
+        self.show()
 
-        # Circulo principal
-        padding = 4
-        self.circle = self.canvas.create_oval(
-            padding, padding,
-            self.size - padding, self.size - padding,
-            fill=self.COLORS[State.IDLE],
-            outline="#222222",
-            width=1
-        )
+    def _setup_shadow(self):
+        """La sombra se dibuja manualmente en paintEvent para evitar conflictos con WA_TranslucentBackground."""
+        # No usar QGraphicsDropShadowEffect - causa UpdateLayeredWindowIndirect errors en Windows
+        pass
 
-    def _show_tooltip(self, event=None):
-        """Muestra tooltip con info del estado actual"""
-        if self._tooltip_window:
-            return
+    def _connect_signals(self):
+        """Conecta signals para comunicación thread-safe."""
+        self.state_signal.connect(self._on_state_change)
+        self.flash_signal.connect(self._on_flash)
+        self.mic_level_signal.connect(self._on_mic_level)
 
-        state_text = {
-            State.IDLE: "Listo",
-            State.DICTATING: "Dictando...",
-            State.PROCESSING: "Procesando..."
-        }
+    def _start_animation(self):
+        """Inicia el loop de animación (60 FPS)."""
+        self._timer = QTimer()
+        self._timer.timeout.connect(self._animate)
+        self._timer.start(16)  # ~60 FPS
 
-        self._tooltip_window = ctk.CTkToplevel(self.root)
-        self._tooltip_window.overrideredirect(True)
-        self._tooltip_window.attributes('-topmost', True)
+    # ========== ANIMACIÓN ==========
 
-        frame = ctk.CTkFrame(self._tooltip_window, fg_color="#1a1a1a", corner_radius=6)
-        frame.pack(padx=1, pady=1)
+    def _animate(self):
+        """Loop principal de animación - el organismo respira."""
+        dt = 0.016  # ~60 FPS
+        self._time += dt
+        self._phase += dt
 
-        label = ctk.CTkLabel(
-            frame,
-            text=f"{state_text.get(self._state, 'VoiceFlow')}\nClick derecho: menu",
-            font=("Segoe UI", 9),
-            text_color="#cccccc"
-        )
-        label.pack(padx=8, pady=4)
+        # Suavizar nivel de micrófono (inercia)
+        self._smoothed_mic = lerp_smooth(self._smoothed_mic, self._mic_level, 0.15)
 
-        # Posicionar a la derecha del overlay
-        x = self.root.winfo_x() + self.size + 5
-        y = self.root.winfo_y()
-        self._tooltip_window.geometry(f"+{x}+{y}")
+        # Calcular tamaño objetivo según estado
+        if self._state == State.DICTATING:
+            # Se hincha con el audio
+            self._target_size = self._base_size + self._smoothed_mic * 15
+        elif self._state == State.PROCESSING:
+            # Ligeramente contraído
+            self._target_size = self._base_size * 0.95
+        else:
+            self._target_size = self._base_size
 
-    def _hide_tooltip(self, event=None):
-        """Oculta el tooltip"""
-        if self._tooltip_window:
-            self._tooltip_window.destroy()
-            self._tooltip_window = None
+        # Interpolación elástica del tamaño
+        diff = self._target_size - self._current_size
+        self._size_velocity = self._size_velocity * 0.85 + diff * 0.15
+        self._current_size += self._size_velocity
 
-    def _start_drag(self, event):
-        self._drag_data["x"] = event.x
-        self._drag_data["y"] = event.y
-        # Ocultar tooltip al empezar a arrastrar
-        self._hide_tooltip()
+        # Respiración base
+        breath = breathing_factor(self._time, rate=0.4, amplitude=0.025)
+        self._display_size = self._current_size * breath
 
-    def _on_drag(self, event):
-        x = self.root.winfo_x() + event.x - self._drag_data["x"]
-        y = self.root.winfo_y() + event.y - self._drag_data["y"]
-        self.root.geometry(f"+{x}+{y}")
+        # Avanzar transición de color
+        if self._transition_progress < 1.0:
+            self._transition_progress = min(1.0, self._transition_progress + dt * 2.5)
 
-    def _show_menu(self, event):
-        # Crear menu contextual moderno
-        menu_window = ctk.CTkToplevel(self.root)
-        menu_window.overrideredirect(True)
-        menu_window.attributes('-topmost', True)
-        menu_window.configure(fg_color="#1a1a1a")
+        # Calcular color actual
+        if not self._flash_active:
+            self._update_color()
 
-        # Frame contenedor con bordes redondeados
-        frame = ctk.CTkFrame(menu_window, fg_color="#1a1a1a", corner_radius=10)
-        frame.pack(padx=2, pady=2)
+        # Redibujar
+        self.update()
+
+    def _update_color(self):
+        """Actualiza el color según el estado actual."""
+        colors = self.COLORS.get(self._state, self.COLORS[State.IDLE])
+        base_color = QColor(colors[0])
+        light_color = QColor(colors[1])
+
+        # Pulso de color según estado
+        if self._state == State.IDLE:
+            # Pulso muy lento
+            factor = (math.sin(self._phase * 0.5) + 1) / 2
+        elif self._state == State.DICTATING:
+            # Pulso más rápido + respuesta al mic
+            base_factor = (math.sin(self._phase * 2) + 1) / 2
+            factor = min(1.0, base_factor * 0.4 + self._smoothed_mic * 0.6)
+        else:
+            # PROCESSING - pulso medio
+            factor = (math.sin(self._phase * 1.5) + 1) / 2
+
+        # Interpolar entre base y light
+        r = int(base_color.red() + (light_color.red() - base_color.red()) * factor)
+        g = int(base_color.green() + (light_color.green() - base_color.green()) * factor)
+        b = int(base_color.blue() + (light_color.blue() - base_color.blue()) * factor)
+
+        target = QColor(r, g, b)
+
+        # Transición suave si estamos cambiando de estado
+        if self._transition_progress < 1.0:
+            self._current_color = self._blend_colors(
+                self._current_color, target, self._transition_progress
+            )
+        else:
+            self._current_color = target
+
+    def _blend_colors(self, c1: QColor, c2: QColor, factor: float) -> QColor:
+        """Mezcla dos colores."""
+        r = int(c1.red() + (c2.red() - c1.red()) * factor)
+        g = int(c1.green() + (c2.green() - c1.green()) * factor)
+        b = int(c1.blue() + (c2.blue() - c1.blue()) * factor)
+        return QColor(r, g, b)
+
+    # ========== DIBUJO ==========
+
+    def paintEvent(self, event):
+        """Dibuja el organismo."""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Centro del widget
+        center = self.rect().center()
+        cx, cy = center.x(), center.y()
+
+        # Radio actual
+        radius = self._display_size / 2
+
+        # Color a usar
+        if self._flash_active and self._flash_color:
+            fill_color = self._flash_color
+        else:
+            fill_color = self._current_color
+
+        # Sombra difusa (dibujada manualmente)
+        self._draw_shadow(painter, cx, cy + 3, radius)
+
+        # Glow (halo) en estado DICTATING
+        if self._state == State.DICTATING and not self._flash_active:
+            self._draw_glow(painter, cx, cy, radius)
+
+        # Dibujar el círculo orgánico
+        self._draw_organic_circle(painter, cx, cy, radius, fill_color)
+
+    def _draw_shadow(self, painter: QPainter, cx: float, cy: float, radius: float):
+        """Dibuja sombra difusa debajo del núcleo."""
+        shadow_radius = radius * 1.15
+        gradient = QRadialGradient(cx, cy, shadow_radius)
+        gradient.setColorAt(0, QColor(0, 0, 0, 40))
+        gradient.setColorAt(0.6, QColor(0, 0, 0, 20))
+        gradient.setColorAt(1, QColor(0, 0, 0, 0))
+
+        painter.setBrush(QBrush(gradient))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(QPointF(cx, cy), shadow_radius, shadow_radius)
+
+    def _draw_glow(self, painter: QPainter, cx: float, cy: float, radius: float):
+        """Dibuja el halo difuso en grabación."""
+        glow_radius = radius * 1.4
+        gradient = QRadialGradient(cx, cy, glow_radius)
+
+        # Color del glow basado en el nivel de mic
+        intensity = int(40 + self._smoothed_mic * 60)
+        gradient.setColorAt(0, QColor(231, 76, 60, intensity))
+        gradient.setColorAt(0.5, QColor(231, 76, 60, int(intensity * 0.3)))
+        gradient.setColorAt(1, QColor(231, 76, 60, 0))
+
+        painter.setBrush(QBrush(gradient))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(QPointF(cx, cy), glow_radius, glow_radius)
+
+    def _draw_organic_circle(self, painter: QPainter, cx: float, cy: float,
+                             radius: float, color: QColor):
+        """Dibuja el círculo con deformación orgánica."""
+        path = QPainterPath()
+        num_points = 36
+
+        for i in range(num_points + 1):
+            angle = (i / num_points) * 2 * math.pi
+
+            # Deformación orgánica del borde
+            if self._state == State.DICTATING:
+                # Más deformación durante grabación
+                noise = organic_noise(angle, self._time, scale=3.0, amplitude=0.03)
+            else:
+                # Deformación sutil en idle
+                noise = organic_noise(angle, self._time, scale=2.0, amplitude=0.015)
+
+            r = radius * noise
+
+            x = cx + math.cos(angle) * r
+            y = cy + math.sin(angle) * r
+
+            if i == 0:
+                path.moveTo(x, y)
+            else:
+                path.lineTo(x, y)
+
+        path.closeSubpath()
+
+        # Rellenar
+        painter.setBrush(QBrush(color))
+        painter.setPen(QPen(QColor("#222222"), 1))
+        painter.drawPath(path)
+
+    # ========== API THREAD-SAFE ==========
+
+    def set_state(self, state: State):
+        """Thread-safe: cambia el estado del organismo."""
+        self.state_signal.emit(state)
+
+    def flash(self, color: str, duration_ms: int = 200):
+        """Thread-safe: flash de color."""
+        self.flash_signal.emit(color, duration_ms)
+
+    def flash_success(self):
+        self.flash(self.SUCCESS_COLOR, 200)
+
+    def flash_error(self):
+        self.flash(self.ERROR_COLOR, 200)
+
+    def flash_unknown(self):
+        """Flash sutil para comando no reconocido."""
+        self.flash("#4A4A4A", 150)
+
+    def set_mic_level(self, level: float):
+        """Thread-safe: actualiza nivel de micrófono (0.0 - 1.0)."""
+        self.mic_level_signal.emit(min(1.0, max(0.0, level)))
+
+    # ========== SLOTS ==========
+
+    def _on_state_change(self, state: State):
+        """Slot: procesa cambio de estado."""
+        if state != self._state:
+            self._prev_state = self._state
+            self._state = state
+            self._transition_progress = 0.0
+
+            # Mostrar/ocultar hints
+            if state == State.DICTATING:
+                self.show_hints()
+            elif self._prev_state == State.DICTATING:
+                self.hide_hints()
+
+    def _on_flash(self, color: str, duration_ms: int):
+        """Slot: procesa flash de color."""
+        self._flash_active = True
+        self._flash_color = QColor(color)
+        QTimer.singleShot(duration_ms, self._end_flash)
+
+    def _end_flash(self):
+        """Termina el flash."""
+        self._flash_active = False
+        self._flash_color = None
+
+    def _on_mic_level(self, level: float):
+        """Slot: actualiza nivel de mic."""
+        self._mic_level = level
+
+    # ========== DRAG & DROP ==========
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_pos = event.globalPosition().toPoint() - self.pos()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.MouseButton.LeftButton and self._drag_pos:
+            self.move(event.globalPosition().toPoint() - self._drag_pos)
+
+    def mouseReleaseEvent(self, event):
+        self._drag_pos = None
+
+    # ========== MENÚ CONTEXTUAL ==========
+
+    def contextMenuEvent(self, event):
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #1a1a1a;
+                border: 1px solid #333;
+                border-radius: 8px;
+                padding: 8px;
+            }
+            QMenu::item {
+                padding: 8px 24px;
+                color: #888;
+                border-radius: 4px;
+            }
+            QMenu::item:selected {
+                background-color: #2a2a2a;
+                color: #ccc;
+            }
+            QMenu::separator {
+                height: 1px;
+                background: #333;
+                margin: 4px 8px;
+            }
+        """)
 
         # Estado actual
-        state_text = {
-            State.IDLE: "Idle",
-            State.DICTATING: "Dictando",
-            State.PROCESSING: "Procesando"
+        state_names = {
+            State.IDLE: "Escuchando",
+            State.DICTATING: "Absorbiendo",
+            State.PROCESSING: "Pensando"
         }
-        state_colors = {
-            State.IDLE: "#27AE60",
-            State.DICTATING: "#E74C3C",
-            State.PROCESSING: "#F5A623"
-        }
+        state_action = menu.addAction(f"● {state_names.get(self._state, 'Unknown')}")
+        state_action.setEnabled(False)
 
-        state_label = ctk.CTkLabel(
-            frame,
-            text=f"● {state_text.get(self._state, 'Estado')}",
-            font=("Segoe UI", 11, "bold"),
-            text_color=state_colors.get(self._state, "#666666")
-        )
-        state_label.pack(pady=(8, 4), padx=12, anchor="w")
+        menu.addSeparator()
 
-        # Separador
-        sep = ctk.CTkFrame(frame, height=1, fg_color="#333333")
-        sep.pack(fill="x", padx=8, pady=4)
+        # Submenú transparencia
+        opacity_menu = menu.addMenu("Transparencia")
+        for val in [0.5, 0.7, 0.9, 1.0]:
+            action = opacity_menu.addAction(f"{int(val*100)}%")
+            action.triggered.connect(lambda checked, v=val: self._set_opacity(v))
 
-        # Opciones
-        options = [
-            ("Transparencia", self._show_opacity_menu),
-            ("Tamaño", self._show_size_menu),
-        ]
+        # Submenú tamaño
+        size_menu = menu.addMenu("Tamaño")
+        for size in [30, 40, 50, 60]:
+            action = size_menu.addAction(f"{size}px")
+            action.triggered.connect(lambda checked, s=size: self._set_size(s))
 
-        for text, command in options:
-            btn = ctk.CTkButton(
-                frame,
-                text=text,
-                font=("Segoe UI", 10),
-                fg_color="transparent",
-                hover_color="#333333",
-                anchor="w",
-                height=28,
-                command=lambda c=command, m=menu_window: (m.destroy(), c())
-            )
-            btn.pack(fill="x", padx=4, pady=1)
+        menu.addSeparator()
 
-        # Separador
-        sep2 = ctk.CTkFrame(frame, height=1, fg_color="#333333")
-        sep2.pack(fill="x", padx=8, pady=4)
-
-        # Guardar posicion
-        save_btn = ctk.CTkButton(
-            frame,
-            text="📍 Guardar posición",
-            font=("Segoe UI", 10),
-            fg_color="transparent",
-            hover_color="#333333",
-            anchor="w",
-            height=28,
-            command=lambda: (menu_window.destroy(), self._save_position())
-        )
-        save_btn.pack(fill="x", padx=4, pady=1)
+        # Guardar posición
+        save_action = menu.addAction("Guardar posición")
+        save_action.triggered.connect(self._save_position)
 
         # Salir
-        exit_btn = ctk.CTkButton(
-            frame,
-            text="❌ Salir",
-            font=("Segoe UI", 10),
-            fg_color="transparent",
-            hover_color="#4a2020",
-            text_color="#E74C3C",
-            anchor="w",
-            height=28,
-            command=lambda: (menu_window.destroy(), self.quit())
-        )
-        exit_btn.pack(fill="x", padx=4, pady=(1, 8))
+        quit_action = menu.addAction("Salir")
+        quit_action.triggered.connect(self.quit)
 
-        # Posicionar menu
-        menu_window.geometry(f"+{event.x_root}+{event.y_root}")
-
-        # Cerrar al perder foco
-        menu_window.bind('<FocusOut>', lambda e: menu_window.destroy())
-        menu_window.focus_set()
-
-    def _show_opacity_menu(self):
-        """Muestra submenu de transparencia"""
-        menu = ctk.CTkToplevel(self.root)
-        menu.overrideredirect(True)
-        menu.attributes('-topmost', True)
-
-        frame = ctk.CTkFrame(menu, fg_color="#1a1a1a", corner_radius=8)
-        frame.pack(padx=2, pady=2)
-
-        ctk.CTkLabel(frame, text="Transparencia", font=("Segoe UI", 10, "bold")).pack(pady=(8, 4))
-
-        for opacity in [0.5, 0.7, 0.9, 1.0]:
-            btn = ctk.CTkButton(
-                frame,
-                text=f"{int(opacity*100)}%",
-                font=("Segoe UI", 10),
-                fg_color="transparent",
-                hover_color="#333333",
-                height=28,
-                width=80,
-                command=lambda o=opacity: (self._set_opacity(o), menu.destroy())
-            )
-            btn.pack(pady=1, padx=4)
-
-        frame.pack_propagate(False)
-        menu.geometry(f"+{self.root.winfo_x() + self.size + 5}+{self.root.winfo_y()}")
-        menu.bind('<FocusOut>', lambda e: menu.destroy())
-        menu.focus_set()
-
-    def _show_size_menu(self):
-        """Muestra submenu de tamaño"""
-        menu = ctk.CTkToplevel(self.root)
-        menu.overrideredirect(True)
-        menu.attributes('-topmost', True)
-
-        frame = ctk.CTkFrame(menu, fg_color="#1a1a1a", corner_radius=8)
-        frame.pack(padx=2, pady=2)
-
-        ctk.CTkLabel(frame, text="Tamaño", font=("Segoe UI", 10, "bold")).pack(pady=(8, 4))
-
-        for size in [30, 40, 50, 60]:
-            btn = ctk.CTkButton(
-                frame,
-                text=f"{size}px",
-                font=("Segoe UI", 10),
-                fg_color="transparent",
-                hover_color="#333333",
-                height=28,
-                width=80,
-                command=lambda s=size: (self._resize(s), menu.destroy())
-            )
-            btn.pack(pady=1, padx=4)
-
-        menu.geometry(f"+{self.root.winfo_x() + self.size + 5}+{self.root.winfo_y()}")
-        menu.bind('<FocusOut>', lambda e: menu.destroy())
-        menu.focus_set()
-
-    def _resize(self, new_size: int):
-        """Cambia el tamaño del overlay"""
-        self.size = new_size
-        self.root.geometry(f"{new_size}x{new_size}")
-        self.canvas.configure(width=new_size, height=new_size)
-
-        # Actualizar circulos
-        padding = 2
-        self.canvas.coords(self.glow, padding, padding, new_size - padding, new_size - padding)
-        # Actualizar arco de mic
-        arc_padding = 1
-        self.canvas.coords(self.mic_arc, arc_padding, arc_padding, new_size - arc_padding, new_size - arc_padding)
-        padding = 4
-        self.canvas.coords(self.circle, padding, padding, new_size - padding, new_size - padding)
+        menu.exec(event.globalPos())
 
     def _set_opacity(self, opacity: float):
-        """Cambia la opacidad del overlay"""
         self._opacity = opacity
-        self.root.attributes('-alpha', opacity)
+        self.setWindowOpacity(opacity)
+
+    def _set_size(self, size: int):
+        self._base_size = size
+        self._current_size = float(size)
+        self._target_size = float(size)
 
     def _save_position(self):
-        """Guarda la posicion, tamaño y opacidad en config.json"""
-        pos = self.get_position()
+        """Guarda la posición actual en config.json."""
+        pos = (self.x(), self.y())
         config = load_config()
         config["overlay"]["position"] = list(pos)
-        config["overlay"]["size"] = self.size
+        config["overlay"]["size"] = self._base_size
         config["overlay"]["opacity"] = self._opacity
         save_config(config)
-        print(f"[UI] Configuración guardada: pos={pos}, size={self.size}, opacity={self._opacity}")
+        print(f"[UI] Configuración guardada: pos={pos}, size={self._base_size}")
 
-    def set_hint_callbacks(self, on_listo, on_cancela):
-        """Configura callbacks para los botones de hints"""
+    # ========== HINTS ==========
+
+    def set_hint_callbacks(self, on_listo: Callable, on_cancela: Callable):
+        """Configura callbacks para los hints."""
         self._on_listo_callback = on_listo
         self._on_cancela_callback = on_cancela
 
+    def show_hints(self):
+        """Muestra los hints de listo/cancela."""
+        if self._hint_window:
+            return
+
+        self._hint_window = QWidget(None, Qt.WindowType.FramelessWindowHint |
+                                    Qt.WindowType.WindowStaysOnTopHint |
+                                    Qt.WindowType.Tool)
+        self._hint_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self._hint_window.setWindowOpacity(0.95)
+
+        layout = QVBoxLayout(self._hint_window)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(6)
+
+        # Frame contenedor
+        frame = QWidget()
+        frame.setStyleSheet("""
+            QWidget {
+                background-color: #1a1a1a;
+                border-radius: 12px;
+            }
+        """)
+        frame_layout = QVBoxLayout(frame)
+        frame_layout.setContentsMargins(12, 8, 12, 10)
+        frame_layout.setSpacing(8)
+
+        # Título
+        title = QLabel("Absorbiendo...")
+        title.setStyleSheet("color: #E74C3C; font-size: 11px; font-weight: 500;")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        frame_layout.addWidget(title)
+
+        # Botones
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(8)
+
+        listo_btn = QPushButton("listo")
+        listo_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #27AE60;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 6px 16px;
+                font-size: 11px;
+                font-weight: 500;
+            }
+            QPushButton:hover {
+                background-color: #2ECC71;
+            }
+        """)
+        listo_btn.clicked.connect(self._on_hint_listo)
+        btn_layout.addWidget(listo_btn)
+
+        cancela_btn = QPushButton("cancela")
+        cancela_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #E74C3C;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 6px 16px;
+                font-size: 11px;
+                font-weight: 500;
+            }
+            QPushButton:hover {
+                background-color: #C0392B;
+            }
+        """)
+        cancela_btn.clicked.connect(self._on_hint_cancela)
+        btn_layout.addWidget(cancela_btn)
+
+        frame_layout.addLayout(btn_layout)
+        layout.addWidget(frame)
+
+        # Posicionar debajo del overlay
+        x = self.x() - 30
+        y = self.y() + self.height() + 8
+        self._hint_window.move(x, y)
+        self._hint_window.show()
+
+    def hide_hints(self):
+        """Oculta los hints."""
+        if self._hint_window:
+            self._hint_window.close()
+            self._hint_window = None
+
     def _on_hint_listo(self):
-        """Handler para boton listo en hints"""
         if self._on_listo_callback:
             self._on_listo_callback()
 
     def _on_hint_cancela(self):
-        """Handler para boton cancela en hints"""
         if self._on_cancela_callback:
             self._on_cancela_callback()
 
-    def set_state(self, state: State):
-        """Thread-safe: encola cambio de estado"""
-        self._ui_queue.put(("state", state))
-
-    def flash(self, color: str, duration_ms: int = 200):
-        """Thread-safe: encola flash de color"""
-        self._ui_queue.put(("flash", color, duration_ms))
-
-    def flash_success(self):
-        self.flash(self.SUCCESS_COLOR)
-
-    def flash_error(self):
-        self.flash(self.ERROR_COLOR)
-
-    def flash_unknown(self):
-        """Flash amarillo para comando no reconocido"""
-        self.flash(self.UNKNOWN_COLOR, 150)
-
-    def _end_flash(self):
-        """Termina el flash y permite que la animacion retome el control"""
-        self._flash_active = False
-
-    def _process_queue(self):
-        """Procesa comandos de UI en el thread principal"""
-        try:
-            while True:
-                cmd = self._ui_queue.get_nowait()
-                if cmd[0] == "state":
-                    state = cmd[1]
-                    old_state = self._state
-                    if state != old_state:
-                        # Iniciar transicion de estado
-                        self._prev_state = old_state
-                        self._state = state
-                        self._transition_progress = 0.0
-                    # Mostrar/ocultar hints segun estado
-                    if state == State.DICTATING and old_state != State.DICTATING:
-                        self.show_hints()
-                    elif state != State.DICTATING and old_state == State.DICTATING:
-                        self.hide_hints()
-                elif cmd[0] == "flash":
-                    color, duration_ms = cmd[1], cmd[2]
-                    self._flash_active = True
-                    self.canvas.itemconfig(self.circle, fill=color)
-                    self.root.after(duration_ms, self._end_flash)
-                elif cmd[0] == "mic_level":
-                    self._mic_level = cmd[1]
-        except queue.Empty:
-            pass
-
-    def update(self):
-        self._process_queue()
-        self.root.update()
-
-    def quit(self):
-        self.root.quit()
+    # ========== UTILIDADES ==========
 
     def get_position(self) -> tuple:
-        """Retorna posicion actual para guardar en config"""
-        return (self.root.winfo_x(), self.root.winfo_y())
+        return (self.x(), self.y())
 
-    def _interpolate_color(self, color1: str, color2: str, factor: float) -> str:
-        """Interpola entre dos colores hex"""
-        r1, g1, b1 = int(color1[1:3], 16), int(color1[3:5], 16), int(color1[5:7], 16)
-        r2, g2, b2 = int(color2[1:3], 16), int(color2[3:5], 16), int(color2[5:7], 16)
+    def update(self):
+        """Fuerza repintado."""
+        super().update()
 
-        r = int(r1 + (r2 - r1) * factor)
-        g = int(g1 + (g2 - g1) * factor)
-        b = int(b1 + (b2 - b1) * factor)
-
-        return f"#{r:02x}{g:02x}{b:02x}"
-
-    def _get_state_base_color(self, state: State) -> str:
-        """Obtiene el color base para un estado"""
-        if state == State.IDLE:
-            return self.IDLE_COLOR_DARK
-        elif state == State.DICTATING:
-            return self.RECORDING_COLOR_DARK
-        elif state == State.PROCESSING:
-            return "#D4A500"
-        return self.IDLE_COLOR_DARK
-
-    def _animate(self):
-        """Animacion continua del overlay"""
-        self._animation_phase += 0.05
-
-        # Avanzar transicion de estado
-        if self._transition_progress < 1.0:
-            self._transition_progress = min(1.0, self._transition_progress + 0.1)
-
-        # No animar si hay un flash activo
-        if self._flash_active:
-            self.root.after(50, self._animate)
-            return
-
-        # Calcular color objetivo segun estado actual
-        if self._state == State.IDLE:
-            # Pulso suave y calmado
-            factor = (math.sin(self._animation_phase * 0.5) + 1) / 2
-            target_color = self._interpolate_color(self.IDLE_COLOR_DARK, self.IDLE_COLOR_LIGHT, factor)
-            target_glow = self._interpolate_color("#222222", "#444444", factor)
-            # Ocultar arco de mic en IDLE
-            self.canvas.itemconfig(self.mic_arc, extent=0)
-
-        elif self._state == State.DICTATING:
-            # Efecto de grabacion: pulso mas rapido + respuesta a mic
-            base_factor = (math.sin(self._animation_phase * 2) + 1) / 2
-            combined_factor = min(1.0, base_factor * 0.5 + self._mic_level * 0.5)
-            target_color = self._interpolate_color(self.RECORDING_COLOR_DARK, self.RECORDING_COLOR_LIGHT, combined_factor)
-            target_glow = self._interpolate_color("#331111", "#662222", combined_factor)
-            # Actualizar arco indicador de nivel de mic (360 grados = nivel maximo)
-            arc_extent = -self._mic_level * 360  # Negativo para sentido horario
-            arc_color = self._interpolate_color("#E74C3C", "#FF6B6B", self._mic_level)
-            self.canvas.itemconfig(self.mic_arc, extent=arc_extent, outline=arc_color)
-
-        elif self._state == State.PROCESSING:
-            # Pulso amarillo
-            factor = (math.sin(self._animation_phase * 3) + 1) / 2
-            target_color = self._interpolate_color("#D4A500", "#FFD700", factor)
-            target_glow = "#333333"
-
-        else:
-            target_color = self.IDLE_COLOR_DARK
-            target_glow = "#333333"
-
-        # Aplicar transicion suave si esta en progreso
-        if self._transition_progress < 1.0:
-            prev_base = self._get_state_base_color(self._prev_state)
-            target_color = self._interpolate_color(prev_base, target_color, self._transition_progress)
-
-        self.canvas.itemconfig(self.circle, fill=target_color)
-        self.canvas.itemconfig(self.glow, fill=target_glow)
-
-        # Continuar animacion cada 50ms
-        self.root.after(50, self._animate)
-
-    def set_mic_level(self, level: float):
-        """Thread-safe: actualiza nivel de microfono (0.0 - 1.0)"""
-        self._ui_queue.put(("mic_level", min(1.0, max(0.0, level))))
-
-    def show_hints(self):
-        """Muestra popup moderno con hints de 'listo' y 'cancela'"""
-        if self._hint_window:
-            return
-
-        self._hint_window = ctk.CTkToplevel(self.root)
-        self._hint_window.overrideredirect(True)
-        self._hint_window.attributes('-topmost', True)
-        self._hint_window.attributes('-alpha', 0.95)
-
-        # Posicionar debajo del overlay
-        x = self.root.winfo_x()
-        y = self.root.winfo_y() + self.size + 8
-
-        frame = ctk.CTkFrame(self._hint_window, fg_color="#1a1a1a", corner_radius=12)
-        frame.pack(padx=2, pady=2)
-
-        # Titulo
-        title = ctk.CTkLabel(
-            frame,
-            text="🎤 Dictando...",
-            font=("Segoe UI", 11, "bold"),
-            text_color="#E74C3C"
-        )
-        title.pack(pady=(10, 8), padx=12)
-
-        # Botones de hint
-        btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        btn_frame.pack(pady=(0, 10), padx=12)
-
-        listo_btn = ctk.CTkButton(
-            btn_frame,
-            text="✓ listo",
-            font=("Segoe UI", 10, "bold"),
-            fg_color="#27AE60",
-            hover_color="#2ECC71",
-            corner_radius=6,
-            height=28,
-            width=70,
-            command=self._on_hint_listo
-        )
-        listo_btn.pack(side="left", padx=2)
-
-        cancela_btn = ctk.CTkButton(
-            btn_frame,
-            text="✗ cancela",
-            font=("Segoe UI", 10, "bold"),
-            fg_color="#E74C3C",
-            hover_color="#C0392B",
-            command=self._on_hint_cancela,
-            corner_radius=6,
-            height=28,
-            width=70
-        )
-        cancela_btn.pack(side="left", padx=2)
-
-        self._hint_window.geometry(f"+{x}+{y}")
-
-    def hide_hints(self):
-        """Oculta popup de hints"""
-        if self._hint_window:
-            self._hint_window.destroy()
-            self._hint_window = None
+    def quit(self):
+        """Cierra el overlay."""
+        self.hide_hints()
+        self.close()
+        if self._app:
+            self._app.quit()
