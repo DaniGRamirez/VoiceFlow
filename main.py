@@ -267,35 +267,35 @@ def main():
         keywords=SELECCION_ALIASES,
         action=actions.on_seleccion,
         allowed_states=[State.IDLE],
-        sound="click"
+        sound="pop"
     ))
 
     registry.register(Command(
         keywords=ELIMINAR_ALIASES,
         action=actions.on_eliminar,
         allowed_states=[State.IDLE],
-        sound="click"
+        sound="pop"
     ))
 
     registry.register(Command(
         keywords=BORRAR_ALIASES,
         action=actions.on_eliminar,  # Misma acción que eliminar
         allowed_states=[State.IDLE],
-        sound="click"
+        sound="pop"
     ))
 
     registry.register(Command(
         keywords=BORRA_TODO_ALIASES,
         action=actions.on_borra_todo,
         allowed_states=[State.IDLE],
-        sound="click"
+        sound="error"
     ))
 
     registry.register(Command(
         keywords=AYUDA_ALIASES,
         action=lambda: actions.on_ayuda(state_machine.state, registry, overlay),
         allowed_states=[State.IDLE, State.DICTATING],
-        sound="click"
+        sound="ding"
     ))
 
     registry.register(Command(
@@ -323,35 +323,35 @@ def main():
         keywords=COPIAR_ALIASES,
         action=actions.on_copiar,
         allowed_states=[State.IDLE],
-        sound="click"
+        sound="pop"
     ))
 
     registry.register(Command(
         keywords=PEGAR_ALIASES,
         action=actions.on_pegar,
         allowed_states=[State.IDLE],
-        sound="click"
+        sound="pop"
     ))
 
     registry.register(Command(
         keywords=DESHACER_ALIASES,
         action=actions.on_deshacer,
         allowed_states=[State.IDLE],
-        sound="click"
+        sound="pop"
     ))
 
     registry.register(Command(
         keywords=REHACER_ALIASES,
         action=actions.on_rehacer,
         allowed_states=[State.IDLE],
-        sound="click"
+        sound="pop"
     ))
 
     registry.register(Command(
         keywords=GUARDAR_ALIASES,
         action=actions.on_guardar,
         allowed_states=[State.IDLE],
-        sound="click"
+        sound="success"
     ))
 
     registry.register(Command(
@@ -410,7 +410,7 @@ def main():
             state_machine.transition(State.PAUSED)
         ),
         allowed_states=[State.IDLE],
-        sound="click"
+        sound="ding"
     ))
 
     registry.register(Command(
