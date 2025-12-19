@@ -1,7 +1,7 @@
 """
 Aliases de comandos de voz.
 
-Aquí se definen variantes/sinónimos que Vosk puede reconocer
+Aquí se definen variantes/sinónimos que Vosk/openWakeWord pueden reconocer
 para cada comando. Esto facilita añadir nuevas palabras cuando
 descubrimos falsos positivos útiles.
 
@@ -9,7 +9,10 @@ Formato:
     "comando_principal": ["variante1", "variante2", ...]
 
 El comando principal es el que se muestra en el spore.
-Las variantes son palabras que Vosk reconoce y queremos aceptar.
+Las variantes son palabras que el engine reconoce y queremos aceptar.
+
+NOTA: Los aliases en inglés (hey jarvis, alexa, etc.) son para
+compatibilidad con openWakeWord cuando se usa ese motor.
 """
 
 # Comandos de navegación
@@ -38,14 +41,14 @@ BORRA_TODO_ALIASES = ["borra todo", "borrar todo"]
 INICIO_ALIASES = ["inicio"]
 FIN_ALIASES = ["fin", "final"]
 
-# Dictado
-DICTADO_ALIASES = ["dictado", "dicta", "dictando", "estado", "dictador", "héctor", "mercado", "víctor", "néctar", "lector", "dictadura"]
-LISTO_ALIASES = ["listo", "lista", "listos"]
-CANCELA_ALIASES = ["cancela", "cancelar", "cancelá", "cancelo", "cancelado"]
+# Dictado (incluye wake-words OWW en inglés)
+DICTADO_ALIASES = ["dictado", "dicta", "dictando", "estado", "dictador", "héctor", "mercado", "víctor", "néctar", "lector", "dictadura", "alexa"]
+LISTO_ALIASES = ["listo", "lista", "listos", "ok", "okay"]
+CANCELA_ALIASES = ["cancela", "cancelar", "cancelá", "cancelo", "cancelado", "stop"]
 ENVIAR_ALIASES = ["enviar", "envía", "envia", "envío", "manda", "mandar"]
 
-# Comandos principales
-CLAUDIA_ALIASES = ["claudia", "novia", "claudio"]
+# Comandos principales (incluye wake-words OWW en inglés)
+CLAUDIA_ALIASES = ["claudia", "novia", "claudio", "hey jarvis", "jarvis"]
 CLAUDIA_DICTADO_ALIASES = ["claudia dictado", "claudia dictar"]
 
 # Utilidades

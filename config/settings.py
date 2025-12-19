@@ -5,10 +5,26 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEFAULT_CONFIG = {
+    # Motor de reconocimiento: "vosk" (ASR completo) o "openwakeword" (solo wake-words)
+    "engine": "vosk",
+
     "model_path": os.path.join(BASE_DIR, "models", "vosk-model-es-0.42"),
 
     # Modo de dictado: "wispr" o "winh" (Win+H de Windows)
     "dictation_mode": "winh",
+
+    # Configuración de openWakeWord (solo si engine="openwakeword")
+    "openwakeword": {
+        "models": [],  # Lista de modelos a cargar (vacío = todos los pre-entrenados)
+        "threshold": 0.5  # Umbral de detección (0-1)
+    },
+
+    # Configuración del motor híbrido (solo si engine="hybrid")
+    "hybrid": {
+        "wake_word": "alexa",  # Wake-word OWW a usar
+        "threshold": 0.3,  # Umbral de detección (bajado para mejor recall)
+        "command_window": 5.0  # Timeout máximo (si hay texto, termina 1s después)
+    },
 
     "overlay": {
         "size": 40,
@@ -38,9 +54,9 @@ DEFAULT_CONFIG = {
     },
 
     "audio": {
-        "gain": 2.0,  # Multiplicador de volumen para Vosk (1.0 = normal, 2.0 = doble)
+        "gain": 3.0,  # Multiplicador de volumen (subido para mejor detección)
         "mic_threshold": 1500,  # Umbral para normalización visual (menor = más sensible)
-        "blocksize": 2000  # Tamaño de fragmento de audio (2000=125ms, 4000=250ms) - menor = más responsivo
+        "blocksize": 1280  # Tamaño de fragmento = frame OWW (80ms a 16kHz)
     }
 }
 

@@ -6,7 +6,6 @@ import os
 import sys
 import threading
 
-from core.engine import VoiceEngine
 from core.state import StateMachine, State
 from core.commands import CommandRegistry, Command
 from core.actions import Actions, NUMEROS
@@ -38,11 +37,17 @@ Uso: python main.py [opciones]
 
 Opciones:
   -d, --debug              Modo debug (sin reconocimiento de voz)
+  -e, --engine ENGINE      Motor: vosk o openwakeword (oww)
   -m, --model MODEL        Modelo Vosk a usar
   -D, --dictation MODE     Modo de dictado: wispr o winh
   -h, --help               Muestra esta ayuda
 
-Modelos disponibles:
+Motores de reconocimiento:
+  vosk                     ASR completo (reconoce cualquier palabra)
+  openwakeword, oww        Solo wake-words (más eficiente, modelos inglés)
+  hybrid, mix              OWW wake + Win+H comandos (recomendado)
+
+Modelos Vosk disponibles:
   small, s                 vosk-model-small-es-0.42 (rápido, menos preciso)
   large, l                 vosk-model-es-0.42 (lento, más preciso)
   <nombre>                 Nombre completo de carpeta en models/
@@ -52,10 +57,11 @@ Modos de dictado:
   winh                     Usa dictado de Windows (Win+H)
 
 Ejemplos:
-  python main.py                       # Wispr + modelo large
-  python main.py -m small              # Wispr + modelo pequeño
+  python main.py                       # Vosk + modelo large
+  python main.py -m small              # Vosk + modelo pequeño
+  python main.py -e oww                # openWakeWord (probar)
+  python main.py -e hybrid             # Híbrido: alexa + Win+H (recomendado)
   python main.py -D winh               # Win+H + modelo large
-  python main.py -D winh -m small      # Win+H + modelo pequeño
   python main.py -d                    # Modo debug
 """)
     sys.exit(0)
@@ -121,6 +127,30 @@ def get_dictation_mode() -> str:
     # Si no hay argumento, usar config
     config = load_config()
     return config.get("dictation_mode", "winh")
+
+
+def get_engine_type() -> str:
+    """Obtiene el tipo de motor desde argumentos o config"""
+    # Aliases
+    oww_aliases = ("openwakeword", "oww", "wakeword")
+    hybrid_aliases = ("hybrid", "mix", "mixto")
+
+    # Buscar --engine o -e en argumentos
+    for i, arg in enumerate(sys.argv):
+        if arg in ("--engine", "-e") and i + 1 < len(sys.argv):
+            engine = sys.argv[i + 1].lower()
+            if engine in oww_aliases:
+                return "openwakeword"
+            if engine in hybrid_aliases:
+                return "hybrid"
+            if engine == "vosk":
+                return "vosk"
+            print(f"[WARN] Motor '{engine}' no reconocido, usando 'vosk'")
+            return "vosk"
+
+    # Si no hay argumento, usar config
+    config = load_config()
+    return config.get("engine", "vosk")
 
 
 def main():
@@ -437,7 +467,8 @@ def main():
             if text:
                 overlay.show_text(text, is_command=False)
 
-    # Obtener rutas de modelos (inicial + upgrade)
+    # Obtener tipo de motor y rutas de modelos
+    engine_type = get_engine_type()
     initial_model, upgrade_model = get_model_paths()
 
     print("=" * 50)
@@ -445,11 +476,26 @@ def main():
         print("VoiceFlow - MODO DEBUG")
     else:
         print("VoiceFlow - Activo")
-        model_name = os.path.basename(initial_model)
-        print(f"Modelo inicial: {model_name}")
-        if upgrade_model:
-            upgrade_name = os.path.basename(upgrade_model)
-            print(f"Upgrade pendiente: {upgrade_name}")
+        print(f"Motor: {engine_type}")
+        if engine_type == "vosk":
+            model_name = os.path.basename(initial_model)
+            print(f"Modelo inicial: {model_name}")
+            if upgrade_model:
+                upgrade_name = os.path.basename(upgrade_model)
+                print(f"Upgrade pendiente: {upgrade_name}")
+        elif engine_type == "hybrid":
+            hybrid_config = config.get("hybrid", {})
+            wake_word = hybrid_config.get("wake_word", "alexa")
+            cmd_window = hybrid_config.get("command_window", 3.0)
+            print(f"Wake-word: '{wake_word}' + Win+H")
+            print(f"Ventana de comando: {cmd_window}s")
+        else:
+            oww_config = config.get("openwakeword", {})
+            oww_models = oww_config.get("models", [])
+            if oww_models:
+                print(f"Modelos OWW: {', '.join(oww_models)}")
+            else:
+                print("Modelos OWW: todos los pre-entrenados")
     dictation_label = "Wispr" if dictation_mode == "wispr" else "Win+H"
     print(f"Dictado: {dictation_label}")
     print("=" * 50)
@@ -481,16 +527,65 @@ def main():
         mic_threshold = audio_config.get("mic_threshold", 1500)
         blocksize = audio_config.get("blocksize", 4000)
 
-        # Iniciar motor de voz en thread separado
-        engine = VoiceEngine(
-            model_path=initial_model,
-            on_result=on_speech,
-            on_mic_level=on_mic_level,
-            gain=audio_gain,
-            mic_threshold=mic_threshold,
-            blocksize=blocksize,
-            upgrade_model_path=upgrade_model
-        )
+        # Iniciar motor según tipo seleccionado
+        if engine_type == "hybrid":
+            from core.hybrid_engine import HybridEngine
+            from ui.capture_overlay import CaptureOverlay
+
+            hybrid_config = config.get("hybrid", {})
+
+            # Crear overlay de captura para Win+H
+            cmd_window = hybrid_config.get("command_window")
+            capture_overlay = CaptureOverlay(timeout=cmd_window)
+
+            # Callback para cambio de estado del híbrido
+            def on_hybrid_state(state):
+                if state == "awake":
+                    # Activar animación de listening (sacudida + pulso)
+                    overlay.set_listening(True)
+                elif state == "idle":
+                    # Desactivar animación de listening
+                    overlay.set_listening(False)
+
+            engine = HybridEngine(
+                model_path=initial_model,  # Ignorado, compatibilidad
+                on_result=on_speech,
+                on_mic_level=on_mic_level,
+                gain=audio_gain,
+                mic_threshold=mic_threshold,
+                blocksize=blocksize,
+                wake_word=hybrid_config.get("wake_word", "alexa"),
+                oww_threshold=hybrid_config.get("threshold", 0.5),
+                command_window=cmd_window,
+                on_state_change=on_hybrid_state,
+                capture_overlay=capture_overlay
+            )
+        elif engine_type == "openwakeword":
+            from core.oww_engine import OpenWakeWordEngine
+
+            oww_config = config.get("openwakeword", {})
+            engine = OpenWakeWordEngine(
+                model_path=initial_model,  # Ignorado, compatibilidad
+                on_result=on_speech,
+                on_mic_level=on_mic_level,
+                gain=audio_gain,
+                mic_threshold=mic_threshold,
+                blocksize=blocksize,
+                oww_models=oww_config.get("models", None) or None,
+                oww_threshold=oww_config.get("threshold", 0.5)
+            )
+        else:
+            from core.engine import VoiceEngine
+
+            engine = VoiceEngine(
+                model_path=initial_model,
+                on_result=on_speech,
+                on_mic_level=on_mic_level,
+                gain=audio_gain,
+                mic_threshold=mic_threshold,
+                blocksize=blocksize,
+                upgrade_model_path=upgrade_model
+            )
 
         # Conectar logger con engine para registrar modelo usado
         logger.set_model_callback(engine.get_model_name)

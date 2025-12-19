@@ -13,22 +13,31 @@ from config.aliases import (
     LISTO_ALIASES, CANCELA_ALIASES, ENVIAR_ALIASES, AYUDA_ALIASES
 )
 
+# Wake-words que pueden aparecer al inicio del comando y deben eliminarse
+WAKE_WORDS = {"alexa", "hey jarvis", "jarvis", "oye", "hola"}
+
 # Comandos que pueden aparecer al final del dictado y deben eliminarse
 COMANDOS_DICTADO = set()
 for aliases in [LISTO_ALIASES, CANCELA_ALIASES, ENVIAR_ALIASES, AYUDA_ALIASES]:
     COMANDOS_DICTADO.update(alias.lower() for alias in aliases)
 
+# Añadir wake-words también a comandos (pueden aparecer al final)
+COMANDOS_DICTADO.update(WAKE_WORDS)
+
 
 def _limpiar_comandos_finales(texto: str, num_palabras: int = 5) -> str:
     """
-    Elimina comandos de VoiceFlow de las últimas N palabras del texto.
+    Elimina comandos de VoiceFlow y wake-words del texto dictado.
+
+    - Wake-words al inicio (ej: "alexa listo" -> "listo")
+    - Comandos al final (ej: "hola mundo listo" -> "hola mundo")
 
     Args:
         texto: El texto dictado
         num_palabras: Número de palabras finales a revisar
 
     Returns:
-        Texto limpio sin comandos al final
+        Texto limpio sin comandos ni wake-words
     """
     if not texto:
         return texto
@@ -38,7 +47,18 @@ def _limpiar_comandos_finales(texto: str, num_palabras: int = 5) -> str:
     if not palabras:
         return texto
 
-    # Revisar las últimas N palabras
+    # 1. Limpiar wake-words al INICIO
+    while palabras:
+        palabra_limpia = re.sub(r'[.,!?;:]', '', palabras[0].lower())
+        if palabra_limpia in WAKE_WORDS:
+            palabras.pop(0)
+        else:
+            break
+
+    if not palabras:
+        return ""
+
+    # 2. Limpiar comandos al FINAL (últimas N palabras)
     inicio_revision = max(0, len(palabras) - num_palabras)
     palabras_finales = palabras[inicio_revision:]
     palabras_limpias = []
