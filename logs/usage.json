@@ -1987,8 +1987,8 @@
     },
     {
       "start": "2025-12-18T13:56:49.229795",
-      "end": "2025-12-18T14:14:49.289819",
-      "duration_seconds": 1080.060029,
+      "end": "2025-12-18T14:31:49.357590",
+      "duration_seconds": 2100.127799,
       "commands": [
         {
           "time": "2025-12-18T13:57:03.443159",
@@ -2042,6 +2042,15 @@
           "model": "es-0.42",
           "attempts": [
             "japón"
+          ]
+        },
+        {
+          "time": "2025-12-18T14:31:47.746057",
+          "command": "abajo",
+          "recognized": "y el trabajo",
+          "model": "es-0.42",
+          "attempts": [
+            "francisco"
           ]
         }
       ],
@@ -2105,34 +2114,687 @@
         {
           "time": "2025-12-18T14:14:03.155216",
           "text": "uh"
+        },
+        {
+          "time": "2025-12-18T14:22:37.997682",
+          "text": "tampoco"
+        },
+        {
+          "time": "2025-12-18T14:22:53.644136",
+          "text": "como punto"
+        },
+        {
+          "time": "2025-12-18T14:23:13.309478",
+          "text": "cómo"
+        },
+        {
+          "time": "2025-12-18T14:25:49.745694",
+          "text": "wow"
+        },
+        {
+          "time": "2025-12-18T14:26:29.976194",
+          "text": "young"
+        },
+        {
+          "time": "2025-12-18T14:26:40.159638",
+          "text": "exacto"
+        },
+        {
+          "time": "2025-12-18T14:28:37.009217",
+          "text": "esperemos"
+        },
+        {
+          "time": "2025-12-18T14:28:42.271815",
+          "text": "coincidieron mucho convirtieron a los"
+        },
+        {
+          "time": "2025-12-18T14:28:45.024031",
+          "text": "centro de la ceiba"
+        },
+        {
+          "time": "2025-12-18T14:28:46.476222",
+          "text": "agosto"
+        },
+        {
+          "time": "2025-12-18T14:29:00.701971",
+          "text": "contener esa palabra me gusta"
+        },
+        {
+          "time": "2025-12-18T14:29:02.134129",
+          "text": "contenerle"
+        },
+        {
+          "time": "2025-12-18T14:29:07.897573",
+          "text": "efectivamente"
+        },
+        {
+          "time": "2025-12-18T14:29:10.390424",
+          "text": "vamos a tener"
+        },
+        {
+          "time": "2025-12-18T14:29:16.243462",
+          "text": "oye piloto"
+        },
+        {
+          "time": "2025-12-18T14:29:17.811529",
+          "text": "es"
+        },
+        {
+          "time": "2025-12-18T14:29:27.825274",
+          "text": "problema"
+        },
+        {
+          "time": "2025-12-18T14:30:03.396723",
+          "text": "bueno tengo"
+        },
+        {
+          "time": "2025-12-18T14:30:12.688808",
+          "text": "mitad del pollo"
+        },
+        {
+          "time": "2025-12-18T14:30:13.455184",
+          "text": "programar"
+        },
+        {
+          "time": "2025-12-18T14:30:19.103873",
+          "text": "el día más feliz de su vida"
+        },
+        {
+          "time": "2025-12-18T14:31:12.998922",
+          "text": "es conteniendo"
+        },
+        {
+          "time": "2025-12-18T14:31:22.257426",
+          "text": "azul"
+        },
+        {
+          "time": "2025-12-18T14:31:42.885688",
+          "text": "francisco"
         }
       ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T16:00:29.631934",
+      "end": "2025-12-18T16:05:29.644358",
+      "duration_seconds": 300.012429,
+      "commands": [
+        {
+          "time": "2025-12-18T16:03:52.039955",
+          "command": "dictado",
+          "recognized": "alexa",
+          "model": "oww:alexa,hey_mycroft,hey_jarvis"
+        },
+        {
+          "time": "2025-12-18T16:04:28.909352",
+          "command": "dictado",
+          "recognized": "alexa",
+          "model": "oww:alexa,hey_mycroft,hey_jarvis"
+        },
+        {
+          "time": "2025-12-18T16:04:33.661696",
+          "command": "dictado",
+          "recognized": "alexa",
+          "model": "oww:alexa,hey_mycroft,hey_jarvis"
+        },
+        {
+          "time": "2025-12-18T16:04:36.411918",
+          "command": "dictado",
+          "recognized": "alexa",
+          "model": "oww:alexa,hey_mycroft,hey_jarvis"
+        },
+        {
+          "time": "2025-12-18T16:04:39.408432",
+          "command": "dictado",
+          "recognized": "alexa",
+          "model": "oww:alexa,hey_mycroft,hey_jarvis"
+        },
+        {
+          "time": "2025-12-18T16:04:43.538394",
+          "command": "claudia",
+          "recognized": "hey jarvis",
+          "model": "oww:alexa,hey_mycroft,hey_jarvis"
+        },
+        {
+          "time": "2025-12-18T16:04:44.844775",
+          "command": "claudia",
+          "recognized": "hey jarvis",
+          "model": "oww:alexa,hey_mycroft,hey_jarvis"
+        },
+        {
+          "time": "2025-12-18T16:05:03.038236",
+          "command": "dictado",
+          "recognized": "alexa",
+          "model": "oww:alexa,hey_mycroft,hey_jarvis"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T16:46:40.541993",
+      "end": "2025-12-18T16:47:40.544965",
+      "duration_seconds": 60.002975,
+      "commands": [
+        {
+          "time": "2025-12-18T16:46:50.324331",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-18T16:47:09.395772",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-18T16:47:20.660714",
+          "command": "enter",
+          "recognized": "Enter",
+          "model": "hybrid:alexa"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T16:48:50.604061",
+      "end": "2025-12-18T16:49:50.605769",
+      "duration_seconds": 60.001712,
+      "commands": [
+        {
+          "time": "2025-12-18T16:48:59.761848",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-18T16:49:28.824398",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "hybrid:alexa"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T16:54:03.813538",
+      "end": "2025-12-18T16:55:03.815736",
+      "duration_seconds": 60.002201,
+      "commands": [
+        {
+          "time": "2025-12-18T16:54:17.995407",
+          "command": "enter",
+          "recognized": "Enter",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-18T16:54:36.650836",
+          "command": "enter",
+          "recognized": "Entero",
+          "model": "hybrid:alexa"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T16:59:43.700087",
+      "end": "2025-12-18T17:01:43.708312",
+      "duration_seconds": 120.008229,
+      "commands": [
+        {
+          "time": "2025-12-18T17:00:01.912090",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-18T17:00:19.927179",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-18T17:00:36.035875",
+          "command": "enter",
+          "recognized": "Entero",
+          "model": "hybrid:alexa"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-18T17:01:26.551548",
+          "text": "Opción 1"
+        },
+        {
+          "time": "2025-12-18T17:01:42.521083",
+          "text": "1"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T17:02:28.986981",
+      "end": "2025-12-18T17:03:28.988796",
+      "duration_seconds": 60.001821,
+      "commands": [
+        {
+          "time": "2025-12-18T17:02:50.054315",
+          "command": "claudia",
+          "recognized": "Claudia",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-18T17:03:02.085425",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-18T17:03:26.498195",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "hybrid:alexa"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T17:07:24.637849",
+      "end": "2025-12-18T17:08:24.639145",
+      "duration_seconds": 60.0013,
+      "commands": [],
+      "ignored": [
+        {
+          "time": "2025-12-18T17:08:08.512767",
+          "text": "Per"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-18T17:11:38.816439",
+      "end": "2025-12-18T17:15:38.828767",
+      "duration_seconds": 240.012331,
+      "commands": [
+        {
+          "time": "2025-12-18T17:12:31.925173",
+          "command": "dictado",
+          "recognized": "Alexa",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-18T17:12:42.791919",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-18T17:15:06.429390",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-18T17:15:26.179679",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "hybrid:alexa"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T08:29:56.242662",
+      "end": "2025-12-19T08:30:56.259078",
+      "duration_seconds": 60.01642,
+      "commands": [
+        {
+          "time": "2025-12-19T08:30:27.017725",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-19T08:30:39.664254",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "hybrid:alexa"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T08:39:08.979501",
+      "end": "2025-12-19T08:40:08.981095",
+      "duration_seconds": 60.001598,
+      "commands": [
+        {
+          "time": "2025-12-19T08:39:50.020679",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-19T08:39:59.059032",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "hybrid:alexa"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T09:33:29.835046",
+      "end": "2025-12-19T09:35:29.837390",
+      "duration_seconds": 120.002347,
+      "commands": [
+        {
+          "time": "2025-12-19T09:35:01.346031",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-19T09:35:11.602472",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "hybrid:alexa"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-19T09:34:53.507283",
+          "text": "Test"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T09:53:05.346742",
+      "end": "2025-12-19T09:58:05.357238",
+      "duration_seconds": 300.010499,
+      "commands": [
+        {
+          "time": "2025-12-19T09:53:38.307097",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-19T09:53:50.461241",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-19T09:57:59.440894",
+          "command": "ayuda",
+          "recognized": "Ayuda",
+          "model": "hybrid:alexa"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T10:06:28.006448",
+      "end": "2025-12-19T10:28:11.162477",
+      "duration_seconds": 1303.156043,
+      "commands": [
+        {
+          "time": "2025-12-19T10:06:43.077407",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "hybrid:alexa"
+        },
+        {
+          "time": "2025-12-19T10:07:10.210450",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "hybrid:alexa"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-19T10:18:42.319870",
+          "text": "voice"
+        }
+      ]
+    },
+    {
+      "start": "2025-12-19T10:55:36.220373",
+      "end": "2025-12-19T10:56:24.965808",
+      "duration_seconds": 48.745441,
+      "commands": [
+        {
+          "time": "2025-12-19T10:55:59.730022",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T10:56:05.633413",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-19T10:55:52.434817",
+          "text": "Vale prueba"
+        }
+      ]
+    },
+    {
+      "start": "2025-12-19T11:12:26.474905",
+      "end": "2025-12-19T11:16:26.543797",
+      "duration_seconds": 240.068898,
+      "commands": [
+        {
+          "time": "2025-12-19T11:12:39.758463",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:12:48.771292",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:13:14.059952",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:13:29.571603",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:13:46.498511",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:15:32.715563",
+          "command": "listo",
+          "recognized": "¿Listo?",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:15:38.682336",
+          "command": "enter",
+          "recognized": "Enter",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-19T11:12:33.269459",
+          "text": "Prueba"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T11:24:35.587146",
+      "end": "2025-12-19T11:27:35.639433",
+      "duration_seconds": 180.052292,
+      "commands": [
+        {
+          "time": "2025-12-19T11:24:52.647463",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:25:01.678673",
+          "command": "cancela",
+          "recognized": "Cancela",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:26:06.685126",
+          "command": "claudia",
+          "recognized": "Claudia",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:26:14.119300",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:27:19.917502",
+          "command": "listo",
+          "recognized": "Listo listo",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T11:30:22.574692",
+      "end": "2025-12-19T11:34:22.628662",
+      "duration_seconds": 240.053976,
+      "commands": [
+        {
+          "time": "2025-12-19T11:32:11.260280",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:32:29.709537",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:33:26.900275",
+          "command": "enviar",
+          "recognized": "Enviar",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T11:37:42.886813",
+      "end": "2025-12-19T11:38:42.898129",
+      "duration_seconds": 60.011321,
+      "commands": [
+        {
+          "time": "2025-12-19T11:37:58.694367",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T11:46:12.346641",
+      "end": "2025-12-19T12:05:12.437472",
+      "duration_seconds": 1140.090838,
+      "commands": [
+        {
+          "time": "2025-12-19T11:46:39.693538",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:48:07.197168",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T11:50:34.245483",
+          "command": "enviar",
+          "recognized": "Enviar",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T12:04:14.442841",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T12:04:45.821042",
+          "command": "listo",
+          "recognized": "¿Listo?",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
       "active": true
     }
   ],
   "stats": {
-    "total_sessions": 25,
-    "total_commands": 200,
-    "total_ignored": 163,
+    "total_sessions": 44,
+    "total_commands": 260,
+    "total_ignored": 194,
     "command_frequency": {
-      "dictado": 48,
-      "enter": 40,
-      "claudia": 36,
-      "enviar": 24,
-      "cancela": 16,
+      "dictado": 77,
+      "enter": 45,
+      "claudia": 40,
+      "cancela": 31,
+      "enviar": 26,
       "opcion uno": 10,
+      "listo": 9,
       "opcion dos": 7,
-      "listo": 6,
-      "ayuda": 4,
+      "ayuda": 5,
       "eliminar": 2,
       "seleccion": 2,
       "pausa": 2,
       "opcion una": 1,
       "reanuda": 1,
-      "tab": 1
+      "tab": 1,
+      "abajo": 1
     },
     "ignored_frequency": {
-      "cómo": 5,
+      "cómo": 6,
       "vale": 4,
       "este": 4,
       "centro": 4,

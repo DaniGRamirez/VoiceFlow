@@ -34,10 +34,11 @@ class CaptureOverlay(QWidget):
     # Signal emitido cuando el overlay está listo para recibir input
     ready_signal = pyqtSignal()
 
-    def __init__(self, timeout: float = 5.0):
+    def __init__(self, timeout: float = 5.0, overlay_position: tuple = None):
         """
         Args:
             timeout: Segundos para esperar dictado antes de cerrar
+            overlay_position: Posición (x, y) del overlay principal para posicionar encima
         """
         # Usar QApplication existente si hay
         self._app = QApplication.instance()
@@ -49,6 +50,7 @@ class CaptureOverlay(QWidget):
         self._timeout = timeout
         self._callback: Optional[Callable[[str], None]] = None
         self._captured_text = ""
+        self._overlay_position = overlay_position  # Posición del overlay principal
 
         self._setup_ui()
 
@@ -56,7 +58,7 @@ class CaptureOverlay(QWidget):
         self._start_capture_signal.connect(self._do_capture)
 
     def _setup_ui(self):
-        """Configura la UI minimalista."""
+        """Configura la UI compacta."""
         # Ventana sin bordes, siempre encima
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint |
@@ -67,43 +69,55 @@ class CaptureOverlay(QWidget):
         # Fondo semi-transparente oscuro
         self.setStyleSheet("""
             QWidget {
-                background-color: rgba(20, 20, 20, 240);
-                border-radius: 12px;
+                background-color: rgba(20, 20, 20, 230);
+                border-radius: 8px;
             }
         """)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setContentsMargins(8, 8, 8, 8)
 
-        # Campo de texto donde Win+H escribirá
+        # Campo de texto compacto donde Win+H escribirá
         self._text_edit = QTextEdit()
-        self._text_edit.setPlaceholderText("Escuchando...")
-        self._text_edit.setFont(QFont("Segoe UI", 14))
+        self._text_edit.setPlaceholderText("...")
+        self._text_edit.setFont(QFont("Segoe UI", 10))
         self._text_edit.setStyleSheet("""
             QTextEdit {
                 background-color: rgba(30, 30, 30, 200);
                 color: #e0e0e0;
-                border: 2px solid #444;
-                border-radius: 8px;
-                padding: 10px;
+                border: 1px solid #444;
+                border-radius: 4px;
+                padding: 4px;
             }
             QTextEdit:focus {
                 border-color: #E74C3C;
             }
         """)
-        self._text_edit.setMinimumSize(400, 100)
+        self._text_edit.setMinimumSize(180, 50)
+        self._text_edit.setMaximumHeight(50)
         layout.addWidget(self._text_edit)
 
-        # Tamaño y posición centrada
-        self.setFixedSize(450, 150)
-        self._center_on_screen()
+        # Tamaño compacto
+        self.setFixedSize(200, 70)
 
-    def _center_on_screen(self):
-        """Centra la ventana en la pantalla."""
-        screen = self._app.primaryScreen().geometry()
-        x = (screen.width() - self.width()) // 2
-        y = (screen.height() - self.height()) // 2
-        self.move(x, y)
+    def set_overlay_position(self, position: tuple):
+        """Actualiza la posición del overlay principal."""
+        self._overlay_position = position
+
+    def _position_above_overlay(self):
+        """Posiciona la ventana justo encima del overlay principal."""
+        if self._overlay_position:
+            # Posicionar encima del overlay principal
+            overlay_x, overlay_y = self._overlay_position
+            x = overlay_x + 40 - self.width() // 2  # Centrado sobre el icono (40 es ~mitad del overlay)
+            y = overlay_y - self.height() - 10  # 10px encima
+            self.move(x, y)
+        else:
+            # Fallback: centrar en pantalla
+            screen = self._app.primaryScreen().geometry()
+            x = (screen.width() - self.width()) // 2
+            y = (screen.height() - self.height()) // 2
+            self.move(x, y)
 
     def capture(self, callback: Callable[[str], None], timeout: Optional[float] = None):
         """
@@ -128,6 +142,9 @@ class CaptureOverlay(QWidget):
         self._last_text = ""  # Último texto detectado (para detectar cambios)
         self._start_time = time.time()  # Para logs de elapsed time
 
+        # Posicionar encima del overlay antes de mostrar
+        self._position_above_overlay()
+
         # Mostrar y tomar foco
         self.show()
         self.raise_()
@@ -149,35 +166,15 @@ class CaptureOverlay(QWidget):
         QTimer.singleShot(self._timeout_ms, self._finish_capture)
 
     def _check_for_text(self):
-        """Revisa si hay texto y espera 1s extra para formateo."""
+        """Revisa si hay texto y lo valida inmediatamente."""
         current_text = self._text_edit.toPlainText().strip()
         elapsed = time.time() - self._start_time if hasattr(self, '_start_time') else 0
 
         if current_text:
-            if self._text_detected_time is None:
-                # Primera vez que detectamos texto
-                self._text_detected_time = time.time()
-                self._last_text = current_text
-                print(f"[CaptureOverlay] Texto detectado: '{current_text}' (a los {elapsed:.1f}s), esperando 1s...")
-            else:
-                wait_time = time.time() - self._text_detected_time
-                # Si el texto cambió, resetear el timer
-                if current_text != self._last_text:
-                    self._last_text = current_text
-                    self._text_detected_time = time.time()
-                    print(f"[CaptureOverlay] Texto actualizado: '{current_text}'")
-                elif wait_time >= 1.0:
-                    # Ya pasó 1 segundo desde que detectamos texto
-                    print(f"[CaptureOverlay] 1s transcurrido, finalizando captura (texto: '{current_text}')")
-                    self._poll_timer.stop()
-                    self._finish_capture()
-                else:
-                    # Aún esperando
-                    pass
-        else:
-            # Sin texto aún
-            if elapsed > 0 and int(elapsed) != int(elapsed - 0.2):  # Log cada segundo aprox
-                print(f"[CaptureOverlay] Sin texto aún... ({elapsed:.1f}s/{self._timeout_ms/1000:.1f}s)")
+            # Texto detectado - validar inmediatamente
+            print(f"[CaptureOverlay] Texto detectado: '{current_text}' (a los {elapsed:.2f}s) - finalizando")
+            self._poll_timer.stop()
+            self._finish_capture()
 
     def _finish_capture(self):
         """Extrae el texto y cierra."""

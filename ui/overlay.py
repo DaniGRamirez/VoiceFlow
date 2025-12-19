@@ -101,6 +101,75 @@ class Spore:
         return True
 
 
+class Transition:
+    """
+    Gestiona una transición entre estados visuales.
+
+    Las transiciones tienen 3 fases:
+    1. COLLAPSE: El elemento origen colapsa hacia el centro
+    2. HOLD: Pausa breve mostrando un punto blanco
+    3. EXPAND: El elemento destino se expande desde el centro
+    """
+
+    def __init__(self, from_visual: str, to_visual: str, to_state: 'State'):
+        """
+        Args:
+            from_visual: "bars" o "circle" - elemento que colapsa
+            to_visual: "bars" o "circle" - elemento que aparece
+            to_state: Estado destino (State.IDLE, State.DICTATING, etc.)
+        """
+        self.from_visual = from_visual
+        self.to_visual = to_visual
+        self.to_state = to_state
+
+        self.time = 0.0
+        self.phase = "collapse"  # "collapse" | "hold" | "expand"
+
+        # Duraciones (segundos)
+        self.collapse_duration = 0.1   # Colapso rápido
+        self.hold_duration = 0.3       # Pausa en el centro
+        self.expand_duration = 0.25    # Expansión con rebote
+
+    @property
+    def total_duration(self) -> float:
+        return self.collapse_duration + self.hold_duration + self.expand_duration
+
+    def update(self, dt: float) -> bool:
+        """
+        Actualiza la transición.
+
+        Returns:
+            True si la transición ha terminado
+        """
+        self.time += dt
+
+        if self.time < self.collapse_duration:
+            self.phase = "collapse"
+        elif self.time < self.collapse_duration + self.hold_duration:
+            self.phase = "hold"
+        else:
+            self.phase = "expand"
+
+        return self.time >= self.total_duration
+
+    def get_collapse_progress(self) -> float:
+        """
+        Progreso del colapso (0 = no colapsado, 1 = totalmente colapsado).
+        """
+        if self.phase == "collapse":
+            return min(1.0, self.time / self.collapse_duration)
+        return 1.0
+
+    def get_expand_progress(self) -> float:
+        """
+        Progreso de la expansión (0 = no expandido, 1 = totalmente expandido).
+        """
+        if self.phase != "expand":
+            return 0.0
+        expand_time = self.time - self.collapse_duration - self.hold_duration
+        return min(1.0, expand_time / self.expand_duration)
+
+
 class Overlay(QWidget):
     """
     El organismo vivo que representa VoiceFlow.
@@ -140,6 +209,9 @@ class Overlay(QWidget):
 
     # Duraciones de animaciones (segundos)
     TRANSITION_DURATION = 0.35  # Duración de transiciones entre estados
+    COLLAPSE_DURATION = 0.1  # Colapso rápido al centro (muy rápido)
+    HOLD_DURATION = 0.5  # Pausa en el centro antes de expandir
+    EXPAND_DURATION = 0.25  # Expansión después del colapso
     WAKE_SHAKE_DURATION = 0.3  # Duración de la sacudida al detectar wake-word
     LISTENING_PULSE_SPEED = 4.0  # Velocidad del pulso mientras escucha comando
 
@@ -205,22 +277,23 @@ class Overlay(QWidget):
         # Drag
         self._drag_pos = None
 
-        # Modo de render en IDLE: "oval" o "bars"
-        self._idle_render_mode = "bars"  # Cambiar a "oval" para el estilo anterior
+        # === SISTEMA DE TRANSICIONES (NUEVO) ===
+        # Modo visual actual: qué elemento se está mostrando
+        self._visual_mode = "bars"  # "bars" | "circle"
 
-        # === SISTEMA DE TRANSICIONES ===
-        # Progreso de transición entre estados (0 = inicio, 1 = completado)
-        self._transition_time = 0.0
-        self._transition_type = None  # "idle_to_dictating", "dictating_to_idle", etc.
+        # Transición activa (None si no hay transición en curso)
+        self._transition: Optional[Transition] = None
 
-        # Despliegue de barras (0 = colapsadas al centro, 1 = desplegadas)
-        self._bars_deploy = 1.0  # Empezamos desplegadas
-        self._bars_deploy_target = 1.0
+        # Despliegue de barras (0 = punto central, 1 = desplegadas)
+        self._bars_deploy = 1.0
 
-        # Color de transición para el círculo (blanco -> rojo)
-        self._circle_color_progress = 1.0  # 0 = blanco, 1 = rojo
+        # Escala del círculo (0.3 = pequeño para transición, 1.0 = normal)
+        self._circle_scale = 1.0
 
-        # Estado de "escuchando comando" (wake-word detectado)
+        # Progreso de color del círculo (0 = blanco, 1 = color destino)
+        self._circle_color_progress = 1.0
+
+        # Estado de "escuchando comando" (wake-word detectado, barras como punto pulsante)
         self._listening_mode = False
         self._listening_time = 0.0
 
@@ -228,7 +301,7 @@ class Overlay(QWidget):
         self._shake_time = 0.0
         self._shake_intensity = 0.0
 
-        # Energía de las barras (para transiciones suaves)
+        # Energía de las barras (basada en nivel de mic)
         self._bars_energy = 0.0
 
         # Setup
@@ -286,38 +359,47 @@ class Overlay(QWidget):
         else:
             self._smoothed_mic = lerp_smooth(self._smoothed_mic, self._mic_level, 0.05)
 
-        # === ANIMACIÓN DE TRANSICIONES ===
-        if self._transition_type:
-            self._transition_time += dt
-            progress = min(1.0, self._transition_time / self.TRANSITION_DURATION)
+        # === ANIMACIÓN DE TRANSICIONES (usando clase Transition) ===
+        if self._transition:
+            finished = self._transition.update(dt)
 
-            if self._transition_type == "idle_to_dictating":
-                # Fase 1: Colapsar barras (primera mitad)
-                if progress < 0.5:
-                    self._bars_deploy = 1.0 - (progress * 2)  # 1 -> 0
-                    self._circle_color_progress = 0.0  # Blanco
-                # Fase 2: Expandir círculo y colorear (segunda mitad)
-                else:
-                    self._bars_deploy = 0.0
-                    self._circle_color_progress = (progress - 0.5) * 2  # 0 -> 1
+            if self._transition.phase == "collapse":
+                # Colapsar elemento origen
+                collapse = self._transition.get_collapse_progress()
+                if self._transition.from_visual == "bars":
+                    self._bars_deploy = 1.0 - collapse
+                else:  # circle
+                    self._circle_scale = 1.0 - collapse * 0.7  # 1.0 → 0.3
+                    self._circle_color_progress = 1.0 - collapse  # color → blanco
 
-            elif self._transition_type == "dictating_to_idle":
-                # Fase 1: Colapsar círculo y decolorear (primera mitad)
-                if progress < 0.5:
-                    self._circle_color_progress = 1.0 - (progress * 2)  # 1 -> 0
-                    self._bars_deploy = 0.0
-                # Fase 2: Desplegar barras (segunda mitad)
-                else:
-                    self._bars_deploy = (progress - 0.5) * 2  # 0 -> 1
+            elif self._transition.phase == "hold":
+                # Todo colapsado (punto blanco)
+                self._bars_deploy = 0.0
+                self._circle_scale = 0.3
+                self._circle_color_progress = 0.0
+
+            else:  # expand
+                # Expandir elemento destino
+                expand = self._transition.get_expand_progress()
+                expand_eased = ease_out_back(expand, 1.1)
+
+                if self._transition.to_visual == "bars":
+                    self._bars_deploy = expand_eased
                     self._circle_color_progress = 0.0
+                else:  # circle
+                    self._circle_scale = 0.3 + expand_eased * 0.7  # 0.3 → 1.0
+                    self._circle_color_progress = expand  # blanco → color
+                    self._bars_deploy = 0.0
 
             # Transición completada
-            if progress >= 1.0:
-                self._transition_type = None
-                self._transition_time = 0.0
-                if self._state == State.IDLE:
+            if finished:
+                self._visual_mode = self._transition.to_visual
+                self._transition = None
+                # Valores finales
+                if self._visual_mode == "bars":
                     self._bars_deploy = 1.0
-                elif self._state == State.DICTATING:
+                else:
+                    self._circle_scale = 1.0
                     self._circle_color_progress = 1.0
 
         # === SACUDIDA POR WAKE-WORD ===
@@ -329,6 +411,13 @@ class Overlay(QWidget):
         # === MODO ESCUCHANDO COMANDO ===
         if self._listening_mode:
             self._listening_time += dt
+            # En listening mode, las barras se mantienen desplegadas
+            # pero con animación de pulsación (manejado en _draw_idle_bars)
+            if not self._transition:
+                self._bars_deploy = lerp_smooth(self._bars_deploy, 1.0, 0.1)
+        elif self._visual_mode == "bars" and not self._transition:
+            # Fuera de listening mode, las barras deben estar desplegadas
+            self._bars_deploy = lerp_smooth(self._bars_deploy, 1.0, 0.1)
 
         # === ENERGÍA DE BARRAS ===
         mic_shaped = pow(self._smoothed_mic, 0.5) if self._smoothed_mic > 0 else 0
@@ -440,78 +529,72 @@ class Overlay(QWidget):
         else:
             fill_color = self._current_color
 
-        # === LÓGICA DE TRANSICIONES ===
-
-        # Durante transición idle_to_dictating o dictating_to_idle
-        is_transitioning = self._transition_type in ["idle_to_dictating", "dictating_to_idle"]
-
-        # Mostrar barras si:
-        # - Estamos en IDLE sin transición
-        # - Transición idle_to_dictating en primera mitad (colapsando barras)
-        # - Transición dictating_to_idle en segunda mitad (desplegando barras)
-        show_bars = False
-        show_circle = False
-
-        if self._transition_type == "idle_to_dictating":
-            # Primera mitad: barras colapsándose, segunda mitad: círculo apareciendo
-            if self._bars_deploy > 0:
-                show_bars = True
-            else:
-                show_circle = True
-        elif self._transition_type == "dictating_to_idle":
-            # Primera mitad: círculo colapsándose, segunda mitad: barras desplegándose
-            if self._bars_deploy > 0:
-                show_bars = True
-            else:
-                show_circle = True
-        elif self._state == State.IDLE and self._idle_render_mode == "bars":
-            show_bars = True
-        else:
-            show_circle = True
-
         # Sombra
         self._draw_shadow(painter, cx, cy + 2, radius)
 
-        # Glow en DICTATING (intensidad según progreso de color)
-        if self._state == State.DICTATING or (is_transitioning and self._circle_color_progress > 0.3):
-            glow_intensity = self._circle_color_progress if is_transitioning else 1.0
-            self._draw_glow(painter, cx, cy, radius, glow_intensity)
+        # === LÓGICA DE DIBUJO SEGÚN TRANSICIÓN ===
+        if self._transition:
+            # Durante transición
+            if self._transition.phase == "collapse":
+                # Colapsar elemento origen
+                if self._transition.from_visual == "bars":
+                    self._draw_idle_bars(painter, cx, cy, radius, fill_color)
+                else:  # circle
+                    # Círculo encogiéndose y volviéndose blanco
+                    scaled_radius = radius * self._circle_scale
+                    circle_color = self._get_circle_color()
+                    if self._circle_color_progress > 0.3:
+                        self._draw_glow(painter, cx, cy, scaled_radius, self._circle_color_progress)
+                    self._draw_nucleus(painter, cx, cy, scaled_radius, circle_color)
 
-        # === DIBUJAR EL ELEMENTO PRINCIPAL ===
-        if show_bars:
-            self._draw_idle_bars(painter, cx, cy, radius, fill_color)
+            elif self._transition.phase == "hold":
+                # Punto blanco pulsante en el centro
+                self._draw_point(painter, cx, cy)
 
-        if show_circle:
-            # Color del círculo: blanco -> rojo según _circle_color_progress
-            white = QColor(255, 255, 255)
-            red_base = QColor(self.DICTATING_FILL[0])
-            red_bright = QColor(self.DICTATING_FILL[1])
+            else:  # expand
+                # Expandir elemento destino
+                if self._transition.to_visual == "bars":
+                    self._draw_idle_bars(painter, cx, cy, radius, fill_color)
+                else:  # circle
+                    # Círculo creciendo y coloreándose
+                    scaled_radius = radius * self._circle_scale
+                    circle_color = self._get_circle_color()
+                    if self._circle_color_progress > 0.3:
+                        self._draw_glow(painter, cx, cy, scaled_radius, self._circle_color_progress)
+                    self._draw_nucleus(painter, cx, cy, scaled_radius, circle_color)
 
-            # Mezclar rojo base y brillante según mic
-            red_target = self._blend_colors(red_base, red_bright, self._smoothed_mic)
-
-            # Mezclar blanco y rojo según progreso
-            circle_color = self._blend_colors(white, red_target, self._circle_color_progress)
-
-            # Tamaño del círculo: durante transición empieza pequeño
-            if is_transitioning:
-                # Escalar el círculo durante transición
-                if self._transition_type == "idle_to_dictating":
-                    # Crece desde pequeño
-                    scale = self._circle_color_progress
-                else:
-                    # Encoge hacia pequeño
-                    scale = 1.0 - self._circle_color_progress
-                    scale = max(0.1, scale)  # Mínimo visible
-
-                scaled_radius = radius * lerp(0.3, 1.0, scale)
+        else:
+            # Estado estable (sin transición)
+            if self._visual_mode == "bars":
+                # Barras (IDLE o listening)
+                self._draw_idle_bars(painter, cx, cy, radius, fill_color)
             else:
-                scaled_radius = radius
-
-            self._draw_nucleus(painter, cx, cy, scaled_radius, circle_color)
+                # Círculo (DICTATING o PAUSED)
+                circle_color = self._get_circle_color()
+                if self._state == State.DICTATING:
+                    self._draw_glow(painter, cx, cy, radius, 1.0)
+                self._draw_nucleus(painter, cx, cy, radius, circle_color)
 
         # Dibujar spores
         self._draw_spores(painter, cx, cy)
+
+    def _get_circle_color(self) -> QColor:
+        """Calcula el color del círculo según estado y progreso."""
+        white = QColor(255, 255, 255)
+
+        if self._state == State.DICTATING:
+            # Rojo
+            red_base = QColor(self.DICTATING_FILL[0])
+            red_bright = QColor(self.DICTATING_FILL[1])
+            target_color = self._blend_colors(red_base, red_bright, self._smoothed_mic)
+        elif self._state == State.PAUSED:
+            # Amarillo/dorado
+            target_color = QColor(self.PAUSED_FILL)
+        else:
+            target_color = white
+
+        # Mezclar blanco y color destino según progreso
+        return self._blend_colors(white, target_color, self._circle_color_progress)
 
     def _draw_shadow(self, painter: QPainter, cx: float, cy: float, radius: float):
         """Sombra difusa."""
@@ -658,6 +741,31 @@ class Overlay(QWidget):
 
         painter.drawPath(path)
 
+    def _draw_point(self, painter: QPainter, cx: float, cy: float):
+        """
+        Dibuja un punto blanco pulsante en el centro.
+        Usado durante la fase "hold" de las transiciones.
+        """
+        # Pulsación sutil
+        pulse = 1.0 + math.sin(self._time * 4) * 0.1
+        point_size = 12 * pulse
+
+        # Fondo negro redondeado
+        bg_size = point_size + 10
+        bg_rect = QRectF(
+            cx - bg_size / 2,
+            cy - bg_size / 2,
+            bg_size,
+            bg_size
+        )
+        painter.setBrush(QBrush(QColor(0, 0, 0)))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(bg_rect, 6, 6)
+
+        # Punto blanco
+        painter.setBrush(QBrush(QColor(255, 255, 255)))
+        painter.drawEllipse(QPointF(cx, cy), point_size / 2, point_size / 2)
+
     def _draw_idle_bars(self, painter: QPainter, cx: float, cy: float,
                         radius: float, color: QColor):
         """
@@ -670,26 +778,51 @@ class Overlay(QWidget):
         - Listening mode: pulso rítmico urgente + sacudida
         - Fondo negro sólido fijo, solo las barras escalan
         """
-        # Dimensiones FIJAS del contenedor (más compacto)
-        container_height = 28  # Altura fija en px (era 36)
-        container_width = (self.BAR_COUNT * self.BAR_WIDTH +
-                          (self.BAR_COUNT - 1) * self.BAR_GAP)
+        # Dimensiones del contenedor - crece con energía
+        base_container_height = 14  # Altura mínima en silencio
+        max_container_height = 24   # Altura máxima con volumen
+        energy = self._bars_energy
 
-        # === SACUDIDA (shake) - MÁS INTENSA ===
+        # Usar _bars_deploy directamente (ya se actualiza en _animate())
+        deploy = self._bars_deploy
+
+        # Cuando está colapsado, usar altura fija para que el "punto" sea visible
+        # Altura del punto: similar a cuando hay voz (18px)
+        collapsed_container_height = 18
+        normal_container_height = base_container_height + (max_container_height - base_container_height) * energy
+
+        # Si deploy < 0.3, usar altura de punto; sino transición gradual
+        if deploy < 0.3:
+            container_height = collapsed_container_height
+        else:
+            transition = (deploy - 0.3) / 0.7
+            container_height = lerp(collapsed_container_height, normal_container_height, transition)
+
+        # Ancho del contenedor depende del despliegue
+        full_container_width = (self.BAR_COUNT * self.BAR_WIDTH +
+                               (self.BAR_COUNT - 1) * self.BAR_GAP)
+        # Contraído: punto compacto (25% del ancho - más pequeño que antes)
+        contracted_ratio = 0.25
+        contracted_width = full_container_width * contracted_ratio
+
+        # === SACUDIDA (shake) - SUTIL ===
         shake_offset_x = 0
         shake_offset_y = 0
         if self._shake_intensity > 0:
-            # Sacudida horizontal rápida y decreciente
-            shake_freq = 35.0  # Frecuencia más alta para sacudida más violenta
-            shake_amp = 10.0 * self._shake_intensity  # Amplitud máxima 10px (era 6)
+            # Sacudida sutil (valores reducidos a la mitad)
+            shake_freq = 17.5  # Frecuencia (era 35)
+            shake_amp = 5.0 * self._shake_intensity  # Amplitud máxima 5px (era 10)
             shake_offset_x = math.sin(self._time * shake_freq) * shake_amp
             shake_offset_y = math.cos(self._time * shake_freq * 1.3) * shake_amp * 0.6
+
+        # Ancho del contenedor interpolado según despliegue
+        container_width = lerp(contracted_width, full_container_width, deploy)
 
         # Posición del contenedor (centrado, con shake)
         container_x = cx - container_width / 2 + shake_offset_x
         container_y = cy - container_height / 2 + shake_offset_y
 
-        # === FONDO NEGRO SÓLIDO (no escala) ===
+        # === FONDO NEGRO SÓLIDO (escala con energía) ===
         padding = 5
         bg_rect = QRectF(
             container_x - padding,
@@ -706,30 +839,29 @@ class Overlay(QWidget):
         max_height = container_height * self.BAR_MAX_HEIGHT_RATIO
         height_range = max_height - base_height
 
-        # Centro de las barras (para perfil de campana y colapso)
+        # Centro de las barras (para perfil de campana)
         center_idx = self.BAR_COUNT // 2
-        center_x = container_x + center_idx * (self.BAR_WIDTH + self.BAR_GAP)
-
-        # Energía de las barras (ya calculada en _animate)
-        energy = self._bars_energy
 
         # === DIBUJAR CADA BARRA ===
+        # Calcular espaciado contraído (proporcional pero más junto)
+        contracted_bar_width = self.BAR_WIDTH * 0.6  # 60% del ancho normal
+        contracted_gap = (contracted_width - self.BAR_COUNT * contracted_bar_width) / max(1, self.BAR_COUNT - 1)
+
         for i in range(self.BAR_COUNT):
-            # Posición X final de la barra
-            final_x = container_x + i * (self.BAR_WIDTH + self.BAR_GAP)
-
             # === ANIMACIÓN DE DESPLIEGUE ===
-            # _bars_deploy: 0 = todas colapsadas al centro, 1 = desplegadas
-            deploy = self._bars_deploy
-
             # Aplicar easing al despliegue (ease out back para rebote)
             deploy_eased = ease_out_back(deploy, 1.2) if deploy < 1.0 else 1.0
 
-            # Interpolar posición X desde el centro
-            bar_x = lerp(center_x, final_x, deploy_eased)
+            # Posición X desplegada (full width)
+            deployed_x = container_x + i * (self.BAR_WIDTH + self.BAR_GAP)
+            # Posición X contraída (mantiene separación dentro de contracted_width)
+            contracted_x = container_x + i * (contracted_bar_width + contracted_gap)
 
-            # Ancho de barra también interpolado (más angosto cuando colapsado)
-            bar_width = lerp(self.BAR_WIDTH * 0.3, self.BAR_WIDTH, deploy_eased)
+            # Interpolar posición X entre contraída y desplegada
+            bar_x = lerp(contracted_x, deployed_x, deploy_eased)
+
+            # Ancho de barra también interpolado
+            bar_width = lerp(contracted_bar_width, self.BAR_WIDTH, deploy_eased)
 
             # === PARÁMETROS ÚNICOS POR BARRA ===
             bar_seed = i * 137.5  # Golden angle
@@ -758,19 +890,28 @@ class Overlay(QWidget):
             else:
                 # === MODO NORMAL ===
 
-                # === MODO SILENCIO: Barras DIMINUTAS (puntitos) con onda potente ===
-                wave_speed = 1.2  # Más rápido (era 0.6)
-                wave_width = 2.5  # Más estrecha para más impacto
+                # === MODO SILENCIO: Barras MICRO (casi invisibles) con onda ping-pong ===
+                wave_speed = 2.4  # Doble de rápido (era 1.2)
+                wave_width = 2.5  # Estrecha para más impacto
 
-                wave_pos = (self._time * wave_speed) % (self.BAR_COUNT + wave_width * 2) - wave_width
+                # Onda ping-pong: va de izquierda a derecha y vuelve
+                wave_range = self.BAR_COUNT - 1  # 0 a BAR_COUNT-1
+                wave_cycle = (self._time * wave_speed) % (wave_range * 2)  # Ciclo completo ida+vuelta
+                if wave_cycle <= wave_range:
+                    # Ida: izquierda a derecha
+                    wave_pos = wave_cycle
+                else:
+                    # Vuelta: derecha a izquierda
+                    wave_pos = wave_range * 2 - wave_cycle
+
                 dist_to_wave = abs(i - wave_pos)
                 # Usar potencia para hacer la onda más "puntiaguda" (más contraste)
                 wave_intensity = math.exp(-(dist_to_wave ** 2) / (2 * (wave_width / 2) ** 2))
                 wave_intensity = pow(wave_intensity, 0.7)  # Más potencia en el pico
 
-                organic_var = perlin_noise_1d(self._time * 0.3 * speed_mult + bar_seed) * 0.01
-                # Barras DIMINUTAS en silencio: base 0.01 (casi invisible), onda añade hasta 0.15
-                silence_component = 0.01 + wave_intensity * 0.14 + organic_var
+                organic_var = perlin_noise_1d(self._time * 0.3 * speed_mult + bar_seed) * 0.003
+                # Barras MICRO: base 0.003 (1/3 de antes), onda añade hasta 0.12
+                silence_component = 0.003 + wave_intensity * 0.12 + organic_var
 
                 # Desplazamiento vertical por la onda (sube cuando pasa) - más pronunciado
                 # Solo en silencio (energy baja), la onda "levanta" las barras
@@ -790,12 +931,27 @@ class Overlay(QWidget):
                 height_factor = max(0.05, min(1.0, height_factor))
 
             # === ALTURA FINAL ===
-            # Durante colapso, las barras también se aplastan
-            height_mult = lerp(0.2, 1.0, deploy_eased)
-            bar_height = (base_height + height_range * height_factor) * height_mult
+            # Durante colapso: mostrar como un PUNTO BLANCO visible
+            # Cuando deploy < 0.3, todas las barras convergen a un punto blanco
+            if deploy_eased < 0.3:
+                # Altura fija para el "punto" - similar a cuando hay voz
+                # Usamos altura proporcional al contenedor para que sea visible
+                point_height = container_height * 0.6  # 60% del contenedor = punto visible
+                bar_height = point_height
+            else:
+                # Transición gradual: de punto a barra normal
+                # Mapear deploy de 0.3-1.0 a 0.0-1.0 para la transición
+                transition = (deploy_eased - 0.3) / 0.7
+                point_height = container_height * 0.6
+                normal_height = (base_height + height_range * height_factor)
+                bar_height = lerp(point_height, normal_height, transition)
 
             # Posición Y (centrada verticalmente, con wave_lift hacia arriba)
-            bar_y = cy - bar_height / 2 + shake_offset_y - wave_lift
+            # No aplicar wave_lift cuando está colapsado (todas quietas en el centro)
+            if deploy_eased < 0.3:
+                bar_y = cy - bar_height / 2 + shake_offset_y
+            else:
+                bar_y = cy - bar_height / 2 + shake_offset_y - wave_lift
 
             # === DIBUJAR LA BARRA ===
             bar_rect = QRectF(bar_x, bar_y, bar_width, bar_height)
@@ -925,26 +1081,29 @@ class Overlay(QWidget):
             self._state = state
             self._transition_progress = 0.0
 
-            # === INICIAR TRANSICIONES ANIMADAS ===
-            self._transition_time = 0.0
-
-            if self._prev_state == State.IDLE and state == State.DICTATING:
-                self._transition_type = "idle_to_dictating"
-                self._circle_color_progress = 0.0  # Empieza blanco
-            elif self._prev_state == State.DICTATING and state == State.IDLE:
-                self._transition_type = "dictating_to_idle"
-                self._bars_deploy = 0.0  # Empiezan colapsadas
-            else:
-                # Otras transiciones: sin animación especial
-                self._transition_type = None
-                if state == State.IDLE:
-                    self._bars_deploy = 1.0
-                elif state == State.DICTATING:
-                    self._circle_color_progress = 1.0
-
             # Terminar modo listening al cambiar de estado
             self._listening_mode = False
             self._listening_time = 0.0
+
+            # === CREAR TRANSICIÓN SEGÚN ESTADOS ===
+            # Determinar visual origen y destino
+            from_visual = self._visual_mode
+
+            # Visual destino según estado
+            if state == State.IDLE:
+                to_visual = "bars"
+            elif state == State.DICTATING:
+                to_visual = "circle"
+            elif state == State.PAUSED:
+                to_visual = "circle"  # PAUSED usa círculo amarillo
+            else:
+                to_visual = "bars"
+
+            # Crear transición si hay cambio de visual o cambio de estado significativo
+            if from_visual != to_visual or state in (State.DICTATING, State.PAUSED, State.IDLE):
+                self._transition = Transition(from_visual, to_visual, state)
+            else:
+                self._transition = None
 
             # Mostrar/ocultar hints según estado
             if state == State.DICTATING:
@@ -1144,20 +1303,12 @@ class Overlay(QWidget):
         # 3 = Transición IDLE -> DICTATING
         elif key == QtCore.Key.Key_3:
             print("[DEBUG] Tecla 3: Transición IDLE -> DICTATING")
-            self._prev_state = State.IDLE
-            self._state = State.DICTATING
-            self._transition_time = 0.0
-            self._transition_type = "idle_to_dictating"
-            self._circle_color_progress = 0.0
+            self._on_state_change(State.DICTATING)
 
         # 4 = Transición DICTATING -> IDLE
         elif key == QtCore.Key.Key_4:
             print("[DEBUG] Tecla 4: Transición DICTATING -> IDLE")
-            self._prev_state = State.DICTATING
-            self._state = State.IDLE
-            self._transition_time = 0.0
-            self._transition_type = "dictating_to_idle"
-            self._bars_deploy = 0.0
+            self._on_state_change(State.IDLE)
 
         # 5 = Solo sacudida (sin listening)
         elif key == QtCore.Key.Key_5:
@@ -1175,12 +1326,24 @@ class Overlay(QWidget):
             print("[DEBUG] Tecla 7: Mic silencio (0.0)")
             self._mic_level = 0.0
 
+        # 8 = Transición DICTATING -> PAUSED
+        elif key == QtCore.Key.Key_8:
+            print("[DEBUG] Tecla 8: Transición DICTATING -> PAUSED")
+            self._on_state_change(State.PAUSED)
+
+        # 9 = Transición PAUSED -> DICTATING
+        elif key == QtCore.Key.Key_9:
+            print("[DEBUG] Tecla 9: Transición PAUSED -> DICTATING")
+            self._on_state_change(State.DICTATING)
+
         # 0 = Reset a estado inicial
         elif key == QtCore.Key.Key_0:
             print("[DEBUG] Tecla 0: Reset a IDLE")
             self._state = State.IDLE
-            self._transition_type = None
+            self._visual_mode = "bars"
+            self._transition = None
             self._bars_deploy = 1.0
+            self._circle_scale = 1.0
             self._circle_color_progress = 1.0
             self._listening_mode = False
             self._shake_time = 0.0
@@ -1297,8 +1460,7 @@ class Overlay(QWidget):
         self._prev_state = State.IDLE
         self._state = State.DICTATING
         self._transition_time = 0.0
-        self._transition_type = "idle_to_dictating"
-        self._circle_color_progress = 0.0
+        self._transition_type = "collapse_then_expand"
 
     def _debug_to_idle(self):
         """Debug: transición a IDLE."""
@@ -1306,8 +1468,7 @@ class Overlay(QWidget):
         self._prev_state = State.DICTATING
         self._state = State.IDLE
         self._transition_time = 0.0
-        self._transition_type = "dictating_to_idle"
-        self._bars_deploy = 0.0
+        self._transition_type = "collapse_then_expand"
 
     def _debug_shake(self):
         """Debug: solo sacudida."""
@@ -1360,7 +1521,7 @@ class Overlay(QWidget):
         self._on_cancela_callback = on_cancela
 
     def show_hints(self):
-        """Muestra los hints de listo/cancela con estética de pop-ups (vertical)."""
+        """Muestra los hints de listo/cancela vertical, justo encima del icono."""
         if self._hint_window:
             return
 
@@ -1369,24 +1530,23 @@ class Overlay(QWidget):
                                     Qt.WindowType.Tool)
         self._hint_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
-        # Layout vertical
+        # Layout vertical compacto
         layout = QVBoxLayout(self._hint_window)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(4)
+        layout.setContentsMargins(3, 3, 3, 3)
+        layout.setSpacing(2)
 
-        # Botón listo - estilo pop-up verde
+        # Botón listo - verde con palabra
         listo_btn = QPushButton("listo")
         listo_btn.setStyleSheet("""
             QPushButton {
                 background-color: rgba(34, 85, 51, 220);
                 color: #b4ffb4;
                 border: none;
-                border-radius: 6px;
-                padding: 5px 16px;
+                border-radius: 4px;
+                padding: 3px 10px;
                 font-family: 'Segoe UI';
                 font-size: 9px;
                 font-weight: 500;
-                min-width: 50px;
             }
             QPushButton:hover {
                 background-color: rgba(45, 110, 65, 230);
@@ -1395,19 +1555,18 @@ class Overlay(QWidget):
         listo_btn.clicked.connect(self._on_hint_listo)
         layout.addWidget(listo_btn)
 
-        # Botón cancela - estilo pop-up rojo
+        # Botón cancela - rojo con palabra
         cancela_btn = QPushButton("cancela")
         cancela_btn.setStyleSheet("""
             QPushButton {
                 background-color: rgba(90, 39, 39, 220);
                 color: #ffb4b4;
                 border: none;
-                border-radius: 6px;
-                padding: 5px 16px;
+                border-radius: 4px;
+                padding: 3px 10px;
                 font-family: 'Segoe UI';
                 font-size: 9px;
                 font-weight: 500;
-                min-width: 50px;
             }
             QPushButton:hover {
                 background-color: rgba(120, 50, 50, 230);
@@ -1419,11 +1578,11 @@ class Overlay(QWidget):
         # Ajustar tamaño
         self._hint_window.adjustSize()
 
-        # Posicionar justo encima del núcleo, centrado
+        # Posicionar justo encima del núcleo
         hint_width = self._hint_window.width()
         overlay_center_x = self.x() + self.width() / 2
         x = int(overlay_center_x - hint_width / 2)
-        y = self.y() - self._hint_window.height() - 5
+        y = self.y() + self._margin - self._hint_window.height() - 5
         self._hint_window.move(x, y)
         self._hint_window.show()
 
@@ -1456,21 +1615,20 @@ class Overlay(QWidget):
         self._paused_hint_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
         layout = QVBoxLayout(self._paused_hint_window)
-        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setContentsMargins(3, 3, 3, 3)
 
-        # Botón reanuda - estilo dorado/amarillo para coincidir con PAUSED
+        # Botón reanuda - dorado con palabra
         reanuda_btn = QPushButton("reanuda")
         reanuda_btn.setStyleSheet("""
             QPushButton {
                 background-color: rgba(139, 117, 0, 220);
                 color: #ffe066;
                 border: none;
-                border-radius: 6px;
-                padding: 5px 16px;
+                border-radius: 4px;
+                padding: 3px 10px;
                 font-family: 'Segoe UI';
                 font-size: 9px;
                 font-weight: 500;
-                min-width: 50px;
             }
             QPushButton:hover {
                 background-color: rgba(180, 150, 0, 230);
@@ -1482,11 +1640,11 @@ class Overlay(QWidget):
         # Ajustar tamaño
         self._paused_hint_window.adjustSize()
 
-        # Posicionar justo encima del núcleo, centrado
+        # Posicionar justo encima del núcleo
         hint_width = self._paused_hint_window.width()
         overlay_center_x = self.x() + self.width() / 2
         x = int(overlay_center_x - hint_width / 2)
-        y = self.y() - self._paused_hint_window.height() - 5
+        y = self.y() + self._margin - self._paused_hint_window.height() - 5
         self._paused_hint_window.move(x, y)
         self._paused_hint_window.show()
 

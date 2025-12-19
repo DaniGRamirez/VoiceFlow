@@ -546,9 +546,10 @@ def main():
 
             hybrid_config = config.get("hybrid", {})
 
-            # Crear overlay de captura para Win+H
+            # Crear overlay de captura para Win+H (posicionado sobre el icono)
             cmd_window = hybrid_config.get("command_window")
-            capture_overlay = CaptureOverlay(timeout=cmd_window)
+            overlay_pos = tuple(overlay_config.get("position", [1850, 50]))
+            capture_overlay = CaptureOverlay(timeout=cmd_window, overlay_position=overlay_pos)
 
             # Callback para cambio de estado del híbrido
             def on_hybrid_state(state):
@@ -578,9 +579,10 @@ def main():
 
             pv_config = config.get("picovoice", {})
 
-            # Crear overlay de captura para Win+H
+            # Crear overlay de captura para Win+H (posicionado sobre el icono)
             cmd_window = pv_config.get("command_window", 5.0)
-            capture_overlay = CaptureOverlay(timeout=cmd_window)
+            overlay_pos = tuple(overlay_config.get("position", [1850, 50]))
+            capture_overlay = CaptureOverlay(timeout=cmd_window, overlay_position=overlay_pos)
 
             # Callback para cambio de estado
             def on_pv_state(state):
