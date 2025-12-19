@@ -1,0 +1,5 @@
+# Dependencias adicionales para motor Picovoice
+# Instalar con: pip install -r requirements-picovoice.txt
+
+pvporcupine>=3.0.0
+pvrecorder>=1.2.0

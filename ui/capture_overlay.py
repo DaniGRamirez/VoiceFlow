@@ -125,6 +125,7 @@ class CaptureOverlay(QWidget):
         self._text_edit.clear()
         self._timeout_ms = int(timeout * 1000)
         self._text_detected_time = None  # Momento en que se detectó texto
+        self._last_text = ""  # Último texto detectado (para detectar cambios)
         self._start_time = time.time()  # Para logs de elapsed time
 
         # Mostrar y tomar foco
@@ -156,17 +157,23 @@ class CaptureOverlay(QWidget):
             if self._text_detected_time is None:
                 # Primera vez que detectamos texto
                 self._text_detected_time = time.time()
+                self._last_text = current_text
                 print(f"[CaptureOverlay] Texto detectado: '{current_text}' (a los {elapsed:.1f}s), esperando 1s...")
             else:
                 wait_time = time.time() - self._text_detected_time
-                if wait_time >= 1.0:
+                # Si el texto cambió, resetear el timer
+                if current_text != self._last_text:
+                    self._last_text = current_text
+                    self._text_detected_time = time.time()
+                    print(f"[CaptureOverlay] Texto actualizado: '{current_text}'")
+                elif wait_time >= 1.0:
                     # Ya pasó 1 segundo desde que detectamos texto
                     print(f"[CaptureOverlay] 1s transcurrido, finalizando captura (texto: '{current_text}')")
                     self._poll_timer.stop()
                     self._finish_capture()
                 else:
                     # Aún esperando
-                    print(f"[CaptureOverlay] Esperando... ({wait_time:.1f}s/1.0s) texto: '{current_text}'")
+                    pass
         else:
             # Sin texto aún
             if elapsed > 0 and int(elapsed) != int(elapsed - 0.2):  # Log cada segundo aprox

@@ -134,6 +134,7 @@ def get_engine_type() -> str:
     # Aliases
     oww_aliases = ("openwakeword", "oww", "wakeword")
     hybrid_aliases = ("hybrid", "mix", "mixto")
+    picovoice_aliases = ("picovoice", "pv", "porcupine")
 
     # Buscar --engine o -e en argumentos
     for i, arg in enumerate(sys.argv):
@@ -143,6 +144,8 @@ def get_engine_type() -> str:
                 return "openwakeword"
             if engine in hybrid_aliases:
                 return "hybrid"
+            if engine in picovoice_aliases:
+                return "picovoice"
             if engine == "vosk":
                 return "vosk"
             print(f"[WARN] Motor '{engine}' no reconocido, usando 'vosk'")
@@ -489,6 +492,15 @@ def main():
             cmd_window = hybrid_config.get("command_window", 3.0)
             print(f"Wake-word: '{wake_word}' + Win+H")
             print(f"Ventana de comando: {cmd_window}s")
+        elif engine_type == "picovoice":
+            pv_config = config.get("picovoice", {})
+            keyword_path = pv_config.get("keyword_path", "")
+            # Extraer nombre del wake-word del archivo
+            wake_word = os.path.basename(keyword_path).split("_")[0] if keyword_path else "unknown"
+            cmd_window = pv_config.get("command_window", 5.0)
+            sensitivity = pv_config.get("sensitivity", 0.7)
+            print(f"Wake-word: '{wake_word}' (Picovoice) + Win+H")
+            print(f"Sensibilidad: {sensitivity}, Ventana: {cmd_window}s")
         else:
             oww_config = config.get("openwakeword", {})
             oww_models = oww_config.get("models", [])
@@ -558,6 +570,37 @@ def main():
                 oww_threshold=hybrid_config.get("threshold", 0.5),
                 command_window=cmd_window,
                 on_state_change=on_hybrid_state,
+                capture_overlay=capture_overlay
+            )
+        elif engine_type == "picovoice":
+            from core.picovoice_engine import PicovoiceHybridEngine
+            from ui.capture_overlay import CaptureOverlay
+
+            pv_config = config.get("picovoice", {})
+
+            # Crear overlay de captura para Win+H
+            cmd_window = pv_config.get("command_window", 5.0)
+            capture_overlay = CaptureOverlay(timeout=cmd_window)
+
+            # Callback para cambio de estado
+            def on_pv_state(state):
+                if state == "awake":
+                    overlay.set_listening(True)
+                elif state == "idle":
+                    overlay.set_listening(False)
+
+            engine = PicovoiceHybridEngine(
+                model_path=None,  # No usado
+                on_result=on_speech,
+                on_mic_level=on_mic_level,
+                gain=audio_gain,
+                mic_threshold=mic_threshold,
+                access_key=pv_config.get("access_key"),
+                keyword_path=pv_config.get("keyword_path"),
+                model_pv_path=pv_config.get("model_path"),
+                sensitivity=pv_config.get("sensitivity", 0.7),
+                command_window=cmd_window,
+                on_state_change=on_pv_state,
                 capture_overlay=capture_overlay
             )
         elif engine_type == "openwakeword":

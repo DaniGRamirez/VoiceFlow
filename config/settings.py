@@ -26,6 +26,15 @@ DEFAULT_CONFIG = {
         "command_window": 5.0  # Timeout máximo (si hay texto, termina 1s después)
     },
 
+    # Configuración de Picovoice Porcupine (solo si engine="picovoice")
+    "picovoice": {
+        "access_key": "",  # API key de https://console.picovoice.ai/ (REQUERIDO)
+        "keyword_path": "models/Claudia_es_windows_v4_0_0.ppn",  # Modelo wake-word
+        "model_path": "models/porcupine_params_es.pv",  # Parámetros español
+        "sensitivity": 0.7,  # Sensibilidad 0-1 (mayor = más sensible)
+        "command_window": 5.0  # Timeout para captura de comando
+    },
+
     "overlay": {
         "size": 40,
         "position": [100, 100],
