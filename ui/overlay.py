@@ -1118,14 +1118,21 @@ class Overlay(QWidget):
     def _on_listening_change(self, listening: bool):
         """Slot: procesa cambio de modo escucha (wake-word detectado)."""
         if listening and not self._listening_mode:
-            # Iniciar modo listening con sacudida
+            # Iniciar modo listening con transición bars → bars
             self._listening_mode = True
             self._listening_time = 0.0
             self._shake_time = self.WAKE_SHAKE_DURATION
             self._shake_intensity = 1.0
-        elif not listening:
+            # Crear transición bars → bars (colapsa y expande)
+            if self._visual_mode == "bars" and not self._transition:
+                self._transition = Transition("bars", "bars", self._state)
+        elif not listening and self._listening_mode:
+            # Salir de listening mode con transición bars → bars
             self._listening_mode = False
             self._listening_time = 0.0
+            # Crear transición bars → bars (colapsa y expande)
+            if self._visual_mode == "bars" and not self._transition:
+                self._transition = Transition("bars", "bars", self._state)
 
     def _on_flash(self, color: str, duration_ms: int):
         """Slot: procesa flash de color."""
