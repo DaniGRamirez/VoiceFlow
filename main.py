@@ -638,6 +638,9 @@ def main():
         voice_thread = threading.Thread(target=engine.start, daemon=True)
         voice_thread.start()
 
+        # Sonido de "ready" para indicar que el sistema está listo
+        sounds.play("ding")
+
     # Loop principal de UI (PyQt6)
     try:
         if DEBUG_MODE:
