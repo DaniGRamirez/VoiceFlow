@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "description": "Comando de prueba para ejecutar script Python",
+  "commands": [
+    {
+      "name": "test",
+      "keywords": ["test", "prueba"],
+      "aliases": ["testing", "probar"],
+      "description": "Ejecuta script de prueba",
+      "states": ["idle"],
+      "sound": "ding",
+      "actions": [
+        { "type": "script", "path": "config/commands/test_script.py" }
+      ]
+    },
+    {
+      "name": "test terminal",
+      "keywords": ["test terminal", "prueba terminal"],
+      "aliases": ["testing terminal", "probar terminal"],
+      "description": "Ejecuta script en terminal separada",
+      "states": ["idle"],
+      "sound": "ding",
+      "actions": [
+        { "type": "script", "path": "config/commands/test_script.py", "terminal": true }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "name": "resumen_sinopsis_bullets",
+  "description": "Genera una sinopsis muy breve y 5 bullet points a partir del texto del usuario",
+  "prompt": "TAREA:\nGenerar un resumen ESTRICTO del texto proporcionado a continuación.\n\nREGLAS OBLIGATORIAS:\n- NO añadas introducciones, despedidas ni comentarios.\n- NO expliques lo que estás haciendo.\n- NO repitas frases del texto original.\n- NO inventes información.\n- NO superes los límites indicados.\n\nFORMATO DE SALIDA (OBLIGATORIO):\n\nSINOPSIS:\n- Máximo 2 líneas.\n- Texto continuo, sin saltos de línea adicionales.\n\nBULLET POINTS:\n- Exactamente 5 bullets.\n- Una sola idea clara por bullet.\n- Frases cortas y directas.\n\nFORMATO EXACTO:\n\nSINOPSIS:\n<texto>\n\nBULLETS:\n- <bullet 1>\n- <bullet 2>\n- <bullet 3>\n- <bullet 4>\n- <bullet 5>\n\nTEXTO A RESUMIR:\n{user_msg}"
+}

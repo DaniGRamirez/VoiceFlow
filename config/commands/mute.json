@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "description": "Comando para silenciar audio",
+  "commands": [
+    {
+      "name": "mute",
+      "keywords": ["mute", "silencio"],
+      "aliases": ["mutear", "silenciar", "calla", "callate"],
+      "description": "Silencia el audio (Fn+F1)",
+      "states": ["idle"],
+      "sound": "click",
+      "actions": [
+        { "type": "key", "key": "volumemute" }
+      ]
+    }
+  ]
+}

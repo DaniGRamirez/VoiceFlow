@@ -5,8 +5,8 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEFAULT_CONFIG = {
-    # Motor de reconocimiento: "vosk" (ASR completo) o "openwakeword" (solo wake-words)
-    "engine": "vosk",
+    # Motor de reconocimiento: "picovoice" (recomendado), "vosk", "hybrid" o "openwakeword"
+    "engine": "picovoice",
 
     "model_path": os.path.join(BASE_DIR, "models", "vosk-model-es-0.42"),
 
@@ -38,7 +38,8 @@ DEFAULT_CONFIG = {
     "overlay": {
         "size": 40,
         "position": [100, 100],
-        "opacity": 0.9
+        "opacity": 0.9,
+        "auto_help": True  # Mostrar ayuda en timeout o comando inválido
     },
 
     "sounds": {
@@ -66,6 +67,12 @@ DEFAULT_CONFIG = {
         "gain": 3.0,  # Multiplicador de volumen (subido para mejor detección)
         "mic_threshold": 1500,  # Umbral para normalización visual (menor = más sensible)
         "blocksize": 1280  # Tamaño de fragmento = frame OWW (80ms a 16kHz)
+    },
+
+    # Comandos custom (config/commands/*.json)
+    "custom_commands": {
+        "enabled": True,  # Cargar comandos custom al iniciar
+        "allow_dangerous_actions": False  # Si True, permite shell/run/script
     }
 }
 

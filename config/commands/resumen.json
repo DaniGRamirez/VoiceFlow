@@ -1,0 +1,24 @@
+{
+  "version": "1.0",
+  "description": "Comando para resumir contenido del portapapeles en Chrome",
+  "commands": [
+    {
+      "name": "resumen",
+      "keywords": ["resumen"],
+      "aliases": ["resumir", "resume", "resumeme"],
+      "description": "Aplica template de resumen al clipboard y lo envía a Chrome",
+      "states": ["idle"],
+      "sound": "ding",
+      "actions": [
+        { "type": "prompt", "template": "config/prompts/resumen.json" },
+        { "type": "script", "path": "config/commands/focus_chrome.py" },
+        { "type": "wait", "seconds": 0.5 },
+        { "type": "hotkey", "keys": ["ctrl", "1"] },
+        { "type": "wait", "seconds": 0.3 },
+        { "type": "hotkey", "keys": ["ctrl", "v"] },
+        { "type": "wait", "seconds": 0.2 },
+        { "type": "hotkey", "keys": ["ctrl", "enter"] }
+      ]
+    }
+  ]
+}

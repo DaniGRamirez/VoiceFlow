@@ -1,0 +1,166 @@
+{
+  "version": "1.0",
+  "description": "Comandos de ejemplo para VoiceFlow. Copia este archivo y personaliza.",
+  "commands": [
+    {
+      "name": "bloquear",
+      "keywords": ["bloquear", "lock"],
+      "aliases": ["bloquea", "lockear"],
+      "description": "Bloquea el ordenador",
+      "states": ["idle"],
+      "sound": "ding",
+      "actions": [
+        { "type": "hotkey", "keys": ["win", "l"] }
+      ]
+    },
+    {
+      "name": "explorador",
+      "keywords": ["explorador", "archivos"],
+      "aliases": ["explorer", "carpetas", "ficheros"],
+      "description": "Abre el explorador de archivos",
+      "states": ["idle"],
+      "sound": "ding",
+      "actions": [
+        { "type": "hotkey", "keys": ["win", "e"] }
+      ]
+    },
+    {
+      "name": "captura pantalla",
+      "keywords": ["captura", "screenshot"],
+      "aliases": ["pantallazo", "capturar", "recorte"],
+      "description": "Abre la herramienta de recortes",
+      "states": ["idle"],
+      "sound": "success",
+      "actions": [
+        { "type": "hotkey", "keys": ["win", "shift", "s"] }
+      ]
+    },
+    {
+      "name": "volumen mute",
+      "keywords": ["silencio", "mute"],
+      "aliases": ["silenciar", "mutear", "calla"],
+      "description": "Silencia el audio del sistema",
+      "states": ["idle"],
+      "actions": [
+        { "type": "key", "key": "volumemute" }
+      ]
+    },
+    {
+      "name": "volumen subir",
+      "keywords": ["subir volumen", "mas volumen"],
+      "aliases": ["sube volumen", "volumen arriba"],
+      "description": "Sube el volumen",
+      "states": ["idle"],
+      "actions": [
+        { "type": "key", "key": "volumeup" },
+        { "type": "key", "key": "volumeup" },
+        { "type": "key", "key": "volumeup" }
+      ]
+    },
+    {
+      "name": "volumen bajar",
+      "keywords": ["bajar volumen", "menos volumen"],
+      "aliases": ["baja volumen", "volumen abajo"],
+      "description": "Baja el volumen",
+      "states": ["idle"],
+      "actions": [
+        { "type": "key", "key": "volumedown" },
+        { "type": "key", "key": "volumedown" },
+        { "type": "key", "key": "volumedown" }
+      ]
+    },
+    {
+      "name": "siguiente cancion",
+      "keywords": ["siguiente", "skip"],
+      "aliases": ["next", "salta", "otra cancion"],
+      "description": "Salta a la siguiente cancion",
+      "states": ["idle"],
+      "actions": [
+        { "type": "key", "key": "nexttrack" }
+      ]
+    },
+    {
+      "name": "pausar musica",
+      "keywords": ["pausar musica", "play pause"],
+      "aliases": ["pausa musica", "detener musica"],
+      "description": "Pausa/reanuda la musica",
+      "states": ["idle"],
+      "actions": [
+        { "type": "key", "key": "playpause" }
+      ]
+    },
+    {
+      "name": "escritorio",
+      "keywords": ["escritorio", "desktop"],
+      "aliases": ["mostrar escritorio", "minimizar todo"],
+      "description": "Muestra el escritorio",
+      "states": ["idle"],
+      "sound": "click",
+      "actions": [
+        { "type": "hotkey", "keys": ["win", "d"] }
+      ]
+    },
+    {
+      "name": "configuracion",
+      "keywords": ["configuracion", "settings"],
+      "aliases": ["ajustes", "opciones"],
+      "description": "Abre la configuracion de Windows",
+      "states": ["idle"],
+      "sound": "ding",
+      "actions": [
+        { "type": "hotkey", "keys": ["win", "i"] }
+      ]
+    },
+    {
+      "name": "cerrar ventana",
+      "keywords": ["cerrar ventana", "cerrar esto"],
+      "aliases": ["cierra ventana", "alt f4"],
+      "description": "Cierra la ventana activa",
+      "states": ["idle"],
+      "sound": "click",
+      "actions": [
+        { "type": "hotkey", "keys": ["alt", "F4"] }
+      ]
+    },
+    {
+      "name": "cambiar ventana",
+      "keywords": ["cambiar ventana", "siguiente ventana"],
+      "aliases": ["alt tab", "otra ventana"],
+      "description": "Cambia a la siguiente ventana",
+      "states": ["idle"],
+      "actions": [
+        { "type": "hotkey", "keys": ["alt", "tab"] }
+      ]
+    },
+    {
+      "name": "nuevo documento",
+      "keywords": ["nuevo documento", "nuevo archivo"],
+      "aliases": ["crear documento", "nuevo"],
+      "description": "Crea un nuevo documento (Ctrl+N)",
+      "states": ["idle"],
+      "actions": [
+        { "type": "hotkey", "keys": ["ctrl", "n"] }
+      ]
+    },
+    {
+      "name": "buscar",
+      "keywords": ["buscar", "search"],
+      "aliases": ["encontrar", "find"],
+      "description": "Abre el dialogo de busqueda (Ctrl+F)",
+      "states": ["idle"],
+      "actions": [
+        { "type": "hotkey", "keys": ["ctrl", "f"] }
+      ]
+    },
+    {
+      "name": "imprimir",
+      "keywords": ["imprimir", "print"],
+      "aliases": ["imprime"],
+      "description": "Abre el dialogo de impresion",
+      "states": ["idle"],
+      "actions": [
+        { "type": "hotkey", "keys": ["ctrl", "p"] }
+      ]
+    }
+  ]
+}

@@ -215,7 +215,7 @@ class Overlay(QWidget):
     WAKE_SHAKE_DURATION = 0.3  # Duración de la sacudida al detectar wake-word
     LISTENING_PULSE_SPEED = 4.0  # Velocidad del pulso mientras escucha comando
 
-    def __init__(self, size: int = 40, position: tuple = (1850, 50), opacity: float = 0.9):
+    def __init__(self, size: int = 40, position: tuple = (1850, 50), opacity: float = 0.9, auto_help: bool = True):
         # Crear QApplication si no existe
         if QApplication.instance() is None:
             self._app = QApplication(sys.argv)
@@ -232,6 +232,7 @@ class Overlay(QWidget):
         self._display_size = float(self._idle_size)
         self._opacity = opacity
         self._position = position
+        self._auto_help = auto_help  # Mostrar ayuda automática en errores
 
         # Forma (1.0 = círculo, >1 = óvalo horizontal)
         self._current_squash = 2.2  # Óvalo más aplanado en IDLE (era 1.6)
@@ -273,6 +274,10 @@ class Overlay(QWidget):
         self._on_listo_callback = None
         self._on_cancela_callback = None
         self._on_reanuda_callback = None
+
+        # Modo silencioso (entrada de texto por teclado)
+        self._silent_input_window = None
+        self._on_silent_input_callback = None  # Callback para procesar texto
 
         # Drag
         self._drag_pos = None
@@ -1267,8 +1272,8 @@ class Overlay(QWidget):
         self._help_window.move(x, y)
         self._help_window.show()
 
-        # Auto-cerrar después de 4 segundos
-        QTimer.singleShot(4000, self._hide_help_popup)
+        # Auto-cerrar después de 8 segundos
+        QTimer.singleShot(8000, self._hide_help_popup)
 
     def _hide_help_popup(self):
         """Cierra el pop-up de ayuda."""
@@ -1355,6 +1360,141 @@ class Overlay(QWidget):
             self._listening_mode = False
             self._shake_time = 0.0
             self._mic_level = 0.0
+
+        # ESPACIO = Modo silencioso (entrada de texto por teclado)
+        elif key == QtCore.Key.Key_Space:
+            self._show_silent_input()
+
+    # ========== MODO SILENCIOSO ==========
+
+    def set_silent_input_callback(self, callback):
+        """Configura el callback para procesar texto del modo silencioso."""
+        self._on_silent_input_callback = callback
+
+    def _show_silent_input(self):
+        """Muestra ventana de entrada de texto para modo silencioso."""
+        from PyQt6.QtWidgets import QLineEdit
+
+        # Cerrar si ya existe
+        if self._silent_input_window:
+            self._silent_input_window.close()
+            self._silent_input_window = None
+
+        # Crear ventana
+        self._silent_input_window = QWidget(None, Qt.WindowType.FramelessWindowHint |
+                                            Qt.WindowType.WindowStaysOnTopHint |
+                                            Qt.WindowType.Tool)
+        self._silent_input_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+
+        layout = QVBoxLayout(self._silent_input_window)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        # Frame contenedor
+        frame = QWidget()
+        frame.setStyleSheet("""
+            QWidget {
+                background-color: rgba(20, 20, 20, 240);
+                border-radius: 8px;
+                border: 1px solid #E74C3C;
+            }
+        """)
+        frame_layout = QVBoxLayout(frame)
+        frame_layout.setContentsMargins(12, 8, 12, 8)
+        frame_layout.setSpacing(6)
+
+        # Label
+        label = QLabel("Modo silencioso - Escribe comando:")
+        label.setStyleSheet("""
+            color: #888;
+            font-family: 'Segoe UI';
+            font-size: 9px;
+            background: transparent;
+            border: none;
+        """)
+        frame_layout.addWidget(label)
+
+        # Campo de texto
+        self._silent_input_field = QLineEdit()
+        self._silent_input_field.setStyleSheet("""
+            QLineEdit {
+                background-color: rgba(40, 40, 40, 200);
+                color: #e0e0e0;
+                border: 1px solid #444;
+                border-radius: 4px;
+                padding: 6px 10px;
+                font-family: 'Segoe UI';
+                font-size: 12px;
+            }
+            QLineEdit:focus {
+                border-color: #E74C3C;
+            }
+        """)
+        self._silent_input_field.setPlaceholderText("ej: bloquear, captura, ayuda...")
+        self._silent_input_field.returnPressed.connect(self._on_silent_input_submit)
+        frame_layout.addWidget(self._silent_input_field)
+
+        # Hint
+        hint = QLabel("Enter = ejecutar | Esc = cancelar")
+        hint.setStyleSheet("""
+            color: #555;
+            font-family: 'Segoe UI';
+            font-size: 8px;
+            background: transparent;
+            border: none;
+        """)
+        frame_layout.addWidget(hint)
+
+        layout.addWidget(frame)
+
+        # Posicionar encima del overlay
+        self._silent_input_window.adjustSize()
+        input_width = self._silent_input_window.width()
+        overlay_center_x = self.x() + self.width() / 2
+        x = int(overlay_center_x - input_width / 2)
+        y = self.y() - self._silent_input_window.height() - 10
+        self._silent_input_window.move(x, y)
+
+        # Instalar event filter para Escape
+        self._silent_input_field.installEventFilter(self)
+
+        # Mostrar y forzar foco
+        self._silent_input_window.show()
+        self._silent_input_window.raise_()
+        self._silent_input_window.activateWindow()
+        self._silent_input_field.setFocus()
+        self._silent_input_field.activateWindow()
+        print("[Silent] Modo silencioso activado - escribe un comando")
+
+    def _on_silent_input_submit(self):
+        """Procesa el texto introducido en modo silencioso."""
+        if not self._silent_input_field:
+            return
+
+        text = self._silent_input_field.text().strip()
+        self._hide_silent_input()
+
+        if text and self._on_silent_input_callback:
+            print(f"[Silent] Comando: '{text}'")
+            self._on_silent_input_callback(text)
+
+    def _hide_silent_input(self):
+        """Cierra la ventana de entrada silenciosa."""
+        if self._silent_input_window:
+            self._silent_input_window.close()
+            self._silent_input_window = None
+            self._silent_input_field = None
+
+    def eventFilter(self, obj, event):
+        """Filtro de eventos para capturar Escape en el campo de texto."""
+        from PyQt6.QtCore import QEvent
+        from PyQt6.QtCore import Qt as QtCore
+
+        if event.type() == QEvent.Type.KeyPress:
+            if event.key() == QtCore.Key.Key_Escape:
+                print("[Silent] Cancelado")
+                self._hide_silent_input()
+                return True
+        return super().eventFilter(obj, event)
 
     # ========== MENÚ CONTEXTUAL ==========
 
@@ -1444,6 +1584,13 @@ class Overlay(QWidget):
 
         menu.addSeparator()
 
+        # Toggle de auto-ayuda
+        auto_help_text = "✓ Auto-ayuda" if self._auto_help else "  Auto-ayuda"
+        auto_help_action = menu.addAction(auto_help_text)
+        auto_help_action.triggered.connect(self._toggle_auto_help)
+
+        menu.addSeparator()
+
         # Guardar posición
         save_action = menu.addAction("Guardar posición")
         save_action.triggered.connect(self._save_position)
@@ -1519,6 +1666,15 @@ class Overlay(QWidget):
         config["overlay"]["opacity"] = self._opacity
         save_config(config)
         print(f"[UI] Configuración guardada: pos={pos}, size={self._base_size}")
+
+    def _toggle_auto_help(self):
+        """Activa/desactiva la auto-ayuda y guarda en config."""
+        self._auto_help = not self._auto_help
+        config = load_config()
+        config["overlay"]["auto_help"] = self._auto_help
+        save_config(config)
+        status = "activada" if self._auto_help else "desactivada"
+        print(f"[UI] Auto-ayuda {status}")
 
     # ========== HINTS ==========
 

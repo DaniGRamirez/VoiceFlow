@@ -167,7 +167,8 @@ def main():
     overlay = Overlay(
         size=overlay_config.get("size", 40),
         position=tuple(overlay_config.get("position", [1850, 50])),
-        opacity=overlay_config.get("opacity", 0.9)
+        opacity=overlay_config.get("opacity", 0.9),
+        auto_help=overlay_config.get("auto_help", True)
     )
 
     sounds_config = config.get("sounds", {})
@@ -439,6 +440,25 @@ def main():
             sound="click"
         ))
 
+    # Cargar comandos custom desde config/commands/*.json
+    custom_config = config.get("custom_commands", {})
+    if custom_config.get("enabled", True):
+        from core.custom_commands import CustomCommandLoader
+
+        commands_dir = os.path.join(BASE_DIR, "config", "commands")
+        loader = CustomCommandLoader(
+            commands_dir=commands_dir,
+            allow_dangerous=custom_config.get("allow_dangerous_actions", False),
+            sound_player=sounds,
+            overlay=overlay
+        )
+        custom_commands = loader.load_all()
+        for cmd in custom_commands:
+            registry.register(cmd)
+
+        if custom_commands:
+            print(f"[Custom] Total: {len(custom_commands)} comandos personalizados")
+
     # Conectar estado a UI
     def on_state_change(old: State, new: State):
         overlay.set_state(new)
@@ -448,7 +468,19 @@ def main():
     # Logger para estadísticas
     logger = get_logger()
 
-    # Callback cuando Vosk reconoce algo
+    # Obtener tipo de motor y rutas de modelos
+    engine_type = get_engine_type()
+
+    # Flag para saber si el motor usa wake-word (Picovoice/Hybrid)
+    is_wake_word_engine = engine_type in ("picovoice", "hybrid")
+
+    # Función para mostrar auto-ayuda (si está habilitada)
+    def show_auto_help():
+        """Muestra ayuda automática si la opción está activada."""
+        if overlay._auto_help:
+            actions.on_ayuda(state_machine.state, registry, overlay)
+
+    # Callback cuando el motor reconoce algo
     def on_speech(text: str):
         print(f"  {text}")
 
@@ -466,12 +498,16 @@ def main():
                 print(f"   (ignorado)")
                 overlay.flash_unknown()
                 logger.log_ignored(text)  # Registrar texto ignorado
+                # Mostrar auto-ayuda si es motor wake-word y hay comando inválido
+                if is_wake_word_engine and text:
+                    show_auto_help()
             # Mostrar texto reconocido como spore efímero
             if text:
                 overlay.show_text(text, is_command=False)
 
-    # Obtener tipo de motor y rutas de modelos
-    engine_type = get_engine_type()
+    # Conectar modo silencioso (pulsar espacio para escribir comandos)
+    overlay.set_silent_input_callback(on_speech)
+
     initial_model, upgrade_model = get_model_paths()
 
     print("=" * 50)
@@ -522,6 +558,7 @@ def main():
     print("  'borra todo'-> Ctrl+A + Delete")
     print("  'opcion X'  -> Pulsa numero")
     print("  'ayuda'     -> Muestra comandos")
+    print("  [Espacio]   -> Modo silencioso (escribir)")
     if DEBUG_MODE:
         print("  'exit'      -> Salir")
     print("=" * 50)
@@ -571,6 +608,7 @@ def main():
                 oww_threshold=hybrid_config.get("threshold", 0.5),
                 command_window=cmd_window,
                 on_state_change=on_hybrid_state,
+                on_timeout=show_auto_help,
                 capture_overlay=capture_overlay
             )
         elif engine_type == "picovoice":
@@ -603,6 +641,7 @@ def main():
                 sensitivity=pv_config.get("sensitivity", 0.7),
                 command_window=cmd_window,
                 on_state_change=on_pv_state,
+                on_timeout=show_auto_help,
                 capture_overlay=capture_overlay
             )
         elif engine_type == "openwakeword":
