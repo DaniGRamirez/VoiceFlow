@@ -3,3 +3,5 @@ sounddevice>=0.4.6
 pyautogui>=0.9.54
 pyperclip>=1.8.2
 pygame>=2.5.0
+pygetwindow>=0.0.9
+playwright>=1.40.0

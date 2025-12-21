@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "description": "Comandos de Text-to-Speech usando providers web (ElevenLabs, etc.)",
+  "commands": [
+    {
+      "name": "hablar",
+      "keywords": ["hablar", "lee", "leer"],
+      "aliases": ["habla", "leeme", "leelo", "dilo", "speak"],
+      "description": "Lee el texto del clipboard usando TTS (ElevenLabs)",
+      "states": ["idle"],
+      "sound": "ding",
+      "actions": [
+        { "type": "tts", "provider": "elevenlabs", "tts_action": "speak" }
+      ]
+    },
+    {
+      "name": "calla",
+      "keywords": ["calla", "para", "pausa"],
+      "aliases": ["callate", "stop", "pause", "silencio tts"],
+      "description": "Pausa la reproducción TTS",
+      "states": ["idle"],
+      "sound": "pop",
+      "actions": [
+        { "type": "tts", "provider": "elevenlabs", "tts_action": "pause" }
+      ]
+    },
+    {
+      "name": "continua",
+      "keywords": ["continua", "sigue", "resume"],
+      "aliases": ["continuar", "seguir"],
+      "description": "Reanuda la reproducción TTS pausada",
+      "states": ["idle"],
+      "actions": [
+        { "type": "tts", "provider": "elevenlabs", "tts_action": "resume" }
+      ]
+    }
+  ]
+}

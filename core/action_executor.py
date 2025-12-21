@@ -18,6 +18,22 @@ import pyperclip
 
 from config.settings import BASE_DIR
 
+# Import lazy para evitar error si playwright no está instalado
+BrowserActionExecutor = None
+
+
+def _get_browser_executor():
+    """Lazy import del BrowserActionExecutor."""
+    global BrowserActionExecutor
+    if BrowserActionExecutor is None:
+        try:
+            from core.browser import BrowserActionExecutor as BAE
+            BrowserActionExecutor = BAE
+        except ImportError:
+            print("[ActionExecutor] Módulo browser no disponible")
+            return None
+    return BrowserActionExecutor
+
 
 class ActionExecutor:
     """
@@ -195,6 +211,39 @@ class ActionExecutor:
             # Copiar al portapapeles
             pyperclip.copy(final_prompt)
             print(f"[Prompt] Template '{template.get('name', 'unknown')}' -> clipboard ({len(final_prompt)} chars)")
+
+        elif action_type == "browser":
+            # Acciones de navegador via Playwright CDP
+            BAE = _get_browser_executor()
+            if BAE is None:
+                raise RuntimeError("Playwright no instalado. Ejecuta: pip install playwright && playwright install chromium")
+            executor = BAE()
+            browser_actions = action.get("actions", [])
+            if not executor.execute(browser_actions, command_name="browser"):
+                raise RuntimeError("Falló la ejecución de acciones browser")
+
+        elif action_type == "tts":
+            # Text-to-Speech via provider web
+            from config.tts import get_provider
+            BAE = _get_browser_executor()
+            if BAE is None:
+                raise RuntimeError("Playwright no instalado para TTS")
+
+            provider_name = action.get("provider", None)
+            tts_action = action.get("tts_action", "speak")  # speak, pause, resume, stop
+
+            provider = get_provider(provider_name)
+            if not provider:
+                raise ValueError(f"Provider TTS no encontrado: {provider_name}")
+
+            browser_actions = provider["actions"].get(tts_action, [])
+            if not browser_actions:
+                raise ValueError(f"Acción '{tts_action}' no disponible en provider {provider['name']}")
+
+            print(f"[TTS] {provider['name']} -> {tts_action}")
+            executor = BAE()
+            if not executor.execute(browser_actions, command_name=f"tts-{tts_action}"):
+                raise RuntimeError(f"Falló TTS {tts_action}")
 
         else:
             raise ValueError(f"Acción desconocida: {action_type}")

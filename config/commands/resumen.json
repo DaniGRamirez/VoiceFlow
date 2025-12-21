@@ -1,23 +1,56 @@
 {
   "version": "1.0",
-  "description": "Comando para resumir contenido del portapapeles en Chrome",
+  "description": "Comandos para resumir contenido del portapapeles via Playwright",
   "commands": [
     {
       "name": "resumen",
       "keywords": ["resumen"],
       "aliases": ["resumir", "resume", "resumeme"],
-      "description": "Aplica template de resumen al clipboard y lo envía a Chrome",
+      "description": "Aplica template de resumen al clipboard y lo envía via Playwright",
       "states": ["idle"],
       "sound": "ding",
       "actions": [
         { "type": "prompt", "template": "config/prompts/resumen.json" },
-        { "type": "script", "path": "config/commands/focus_chrome.py" },
-        { "type": "wait", "seconds": 0.5 },
-        { "type": "hotkey", "keys": ["ctrl", "1"] },
-        { "type": "wait", "seconds": 0.3 },
-        { "type": "hotkey", "keys": ["ctrl", "v"] },
-        { "type": "wait", "seconds": 0.2 },
-        { "type": "hotkey", "keys": ["ctrl", "enter"] }
+        {
+          "type": "browser",
+          "actions": [
+            { "action": "connect" },
+            { "action": "find_tab", "url_contains": "chatgpt" },
+            { "action": "wait_for", "selector": "div[contenteditable='true']", "timeout": 5 },
+            { "action": "clear", "selector": "div[contenteditable='true']" },
+            { "action": "paste", "selector": "div[contenteditable='true']" },
+            { "action": "wait", "seconds": 0.3 },
+            { "action": "press", "key": "Enter" },
+            { "action": "focus_window", "title": "Edge" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "resumen hablar",
+      "keywords": ["resumen hablar", "resumen voz"],
+      "aliases": ["resumir y hablar", "resume hablar", "resumen hablado"],
+      "description": "Resume y activa lectura en voz alta (background)",
+      "states": ["idle"],
+      "sound": "ding",
+      "actions": [
+        { "type": "prompt", "template": "config/prompts/resumen.json" },
+        {
+          "type": "browser",
+          "actions": [
+            { "action": "connect" },
+            { "action": "find_tab", "url_contains": "chatgpt" },
+            { "action": "focus_window", "title": "Edge" },
+            { "action": "wait_for", "selector": "div[contenteditable='true']", "timeout": 5 },
+            { "action": "count_messages" },
+            { "action": "clear", "selector": "div[contenteditable='true']" },
+            { "action": "paste", "selector": "div[contenteditable='true']" },
+            { "action": "wait", "seconds": 0.3 },
+            { "action": "press", "key": "Enter" },
+            { "action": "wait_for_new_message", "timeout": 120 },
+            { "action": "click_last_menu_item", "item_text": "Leer en voz alta" }
+          ]
+        }
       ]
     }
   ]
