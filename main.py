@@ -10,6 +10,7 @@ from core.state import StateMachine, State
 from core.commands import CommandRegistry, Command
 from core.actions import Actions, NUMEROS
 from ui.overlay import Overlay
+from ui.notification_panel import NotificationPanel
 from audio.feedback import SoundPlayer
 from config.settings import load_config, BASE_DIR
 from config.aliases import (
@@ -180,6 +181,52 @@ def main():
 
     dictation_mode = get_dictation_mode()
     actions = Actions(config, debug_mode=DEBUG_MODE, dictation_mode=dictation_mode)
+
+    # ========== SISTEMA DE NOTIFICACIONES ==========
+    notification_panel = None
+    notification_manager = None
+    event_server = None
+
+    notifications_config = config.get("notifications", {})
+    if notifications_config.get("enabled", True):
+        try:
+            from core.event_server import EventServer, FASTAPI_AVAILABLE
+            from core.notification_manager import NotificationManager
+
+            if FASTAPI_AVAILABLE:
+                # Crear panel de notificaciones
+                panel_config = notifications_config.get("panel", {})
+                notification_panel = NotificationPanel(
+                    overlay_widget=overlay,
+                    margin_top=panel_config.get("margin_top", 80),
+                    max_visible=panel_config.get("max_visible", 3)
+                )
+                notification_panel.show()
+
+                # Crear manager
+                notification_manager = NotificationManager(
+                    panel=notification_panel,
+                    execute_callback=actions.execute_notification_intent,
+                    sounds=sounds
+                )
+
+                # Crear servidor de eventos
+                server_config = notifications_config.get("server", {})
+                event_server = EventServer(
+                    host=server_config.get("host", "localhost"),
+                    port=server_config.get("port", 8765),
+                    on_notification=notification_manager.on_notification,
+                    on_intent=notification_manager.on_intent
+                )
+                event_server.start()
+
+                print(f"[Notifications] Servidor activo en http://localhost:{server_config.get('port', 8765)}")
+            else:
+                print("[Notifications] FastAPI no instalado, notificaciones deshabilitadas")
+        except ImportError as e:
+            print(f"[Notifications] No disponible: {e}")
+        except Exception as e:
+            print(f"[Notifications] Error inicializando: {e}")
 
     # Registrar comandos
     registry = CommandRegistry()

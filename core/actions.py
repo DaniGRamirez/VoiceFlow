@@ -380,36 +380,36 @@ if ($hwnd) {
         """Muestra comandos disponibles en el estado actual"""
         from core.state import State
 
-        # Descripciones de comandos
+        # Descripciones de comandos (user-friendly)
         descriptions = {
-            "claudia": "VSCode + Chat",
-            "claudia dictado": "VSCode + Chat + Dictado",
-            "dictado": "Activa dictado",
-            "listo": "Termina dictado",
-            "cancela": "Cancela dictado",
-            "enviar": "Envía mensaje",
-            "enter": "Pulsa Enter",
-            "seleccion": "Selecciona todo",
-            "eliminar": "Borra selección",
-            "borra todo": "Borra todo",
-            "escape": "Pulsa Escape",
-            "tab": "Tabulador",
-            "aceptar": "Pulsa Enter",
-            "copiar": "Ctrl+C",
-            "pegar": "Ctrl+V",
-            "deshacer": "Ctrl+Z",
-            "rehacer": "Ctrl+Y",
-            "guardar": "Ctrl+S",
-            "arriba": "Flecha arriba",
-            "abajo": "Flecha abajo",
-            "izquierda": "Flecha izquierda",
-            "derecha": "Flecha derecha",
-            "inicio": "Ir al inicio",
-            "fin": "Ir al final",
-            "repetir": "Repite acción",
-            "ayuda": "Muestra ayuda",
-            "pausa": "Pausa comandos",
-            "reanuda": "Reanuda comandos",
+            "claudia": "Abre chat de Claude en VSCode",
+            "claudia dictado": "Abre Claude y empieza a dictar",
+            "dictado": "Empieza a dictar texto",
+            "listo": "Termina y envía el dictado",
+            "cancela": "Cancela sin enviar",
+            "enviar": "Envía el mensaje",
+            "enter": "Confirma / nueva línea",
+            "seleccion": "Selecciona todo el texto",
+            "eliminar": "Borra lo seleccionado",
+            "borra todo": "Borra todo el texto",
+            "escape": "Cierra o cancela",
+            "tab": "Salta al siguiente campo",
+            "aceptar": "Acepta la opción",
+            "copiar": "Copia al portapapeles",
+            "pegar": "Pega del portapapeles",
+            "deshacer": "Deshace el último cambio",
+            "rehacer": "Rehace lo deshecho",
+            "guardar": "Guarda el archivo",
+            "arriba": "Mueve hacia arriba",
+            "abajo": "Mueve hacia abajo",
+            "izquierda": "Mueve a la izquierda",
+            "derecha": "Mueve a la derecha",
+            "inicio": "Va al principio",
+            "fin": "Va al final",
+            "repetir": "Repite el último comando",
+            "ayuda": "Muestra esta ayuda",
+            "pausa": "Pausa el reconocimiento",
+            "reanuda": "Reanuda el reconocimiento",
             "reiniciar": "Reinicia VoiceFlow",
         }
 
@@ -549,3 +549,49 @@ if ($hwnd) {
         subprocess.Popen(args, creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == 'win32' else 0)
         # Salir del proceso actual
         os._exit(0)
+
+    # ========== NOTIFICACIONES DE CLAUDE CODE ==========
+
+    def execute_notification_intent(self, action: dict) -> bool:
+        """
+        Ejecuta una acción de notificación en VS Code.
+
+        El sistema se adapta a cualquier tipo de notificación:
+        la notificación define sus propias acciones con hotkeys,
+        y este método ejecuta el hotkey correspondiente.
+
+        Args:
+            action: Dict con:
+                - id: Identificador de la acción (ej: "accept", "cancel", "option_1")
+                - hotkey: Tecla o combinación a presionar (ej: "enter", "escape", "ctrl+enter")
+                - label: Etiqueta de la acción (para logging)
+
+        Returns:
+            True si se ejecutó correctamente
+        """
+        action_id = action.get("id", "unknown")
+        hotkey = action.get("hotkey", "enter")
+        label = action.get("label", action_id)
+
+        print(f"[Actions] Ejecutando intent: {label} (hotkey: {hotkey})")
+
+        try:
+            # 1. Enfocar VS Code
+            self._focus_vscode()
+            time.sleep(0.2)
+
+            # 2. Ejecutar hotkey
+            if "+" in hotkey:
+                # Combinación de teclas (ej: "ctrl+enter", "alt+1")
+                keys = hotkey.split("+")
+                pyautogui.hotkey(*keys)
+            else:
+                # Tecla simple (ej: "enter", "escape", "1", "2", "tab")
+                pyautogui.press(hotkey)
+
+            print(f"[Actions] Intent ejecutado: {label}")
+            return True
+
+        except Exception as e:
+            print(f"[Actions] Error ejecutando intent {label}: {e}")
+            return False
