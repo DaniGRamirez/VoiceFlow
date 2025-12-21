@@ -6,12 +6,18 @@ Opcionalmente envía push notifications via Pushover.
 """
 
 import time
+import hashlib
 from typing import Optional, Callable, Dict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from PyQt6.QtCore import QObject, pyqtSignal
 
 from core.pushover_client import PushoverClient
+
+
+# Configuración de deduplicación
+DEDUP_WINDOW_SECONDS = 10.0  # Ventana de tiempo para considerar duplicados
+DEDUP_MAX_ENTRIES = 50  # Máximo de entries en el cache de dedup
 
 
 @dataclass
@@ -23,6 +29,7 @@ class NotificationState:
     created_at: float = 0
     executed_at: float = 0
     intent: Optional[str] = None
+    dedup_key: str = ""  # Clave para deduplicación
 
 
 class NotificationManager(QObject):
@@ -67,11 +74,66 @@ class NotificationManager(QObject):
 
         self._notifications: Dict[str, NotificationState] = {}
 
+        # Cache de deduplicación: dedup_key -> (correlation_id, timestamp)
+        self._dedup_cache: Dict[str, tuple] = {}
+
         # Conectar panel si existe
         if self.panel:
             self.panel.intent_signal.connect(self._on_panel_intent)
             self.panel.dismiss_signal.connect(self._on_panel_dismiss)
             self.panel.vscode_signal.connect(self._on_panel_vscode)
+
+    def _generate_dedup_key(self, data: dict) -> str:
+        """
+        Genera una clave única para deduplicación basada en el contenido.
+
+        Usa título + body + tool_name para identificar notificaciones similares.
+        Ignora el correlation_id ya que cada acción de agente genera uno nuevo.
+        """
+        title = data.get("title", "")
+        body = data.get("body", "")
+        tool_name = data.get("tool_name", "")
+
+        # Crear string normalizado
+        content = f"{title}|{body}|{tool_name}".lower().strip()
+
+        # Hash corto para la clave
+        return hashlib.md5(content.encode()).hexdigest()[:16]
+
+    def _is_duplicate(self, dedup_key: str) -> tuple:
+        """
+        Verifica si una notificación es duplicada.
+
+        Returns:
+            (is_dup, existing_cid): Tuple con bool y correlation_id existente si es dup
+        """
+        now = time.time()
+
+        # Limpiar entries expiradas del cache
+        expired_keys = [
+            k for k, (cid, ts) in self._dedup_cache.items()
+            if now - ts > DEDUP_WINDOW_SECONDS
+        ]
+        for k in expired_keys:
+            del self._dedup_cache[k]
+
+        # Limitar tamaño del cache
+        if len(self._dedup_cache) > DEDUP_MAX_ENTRIES:
+            # Eliminar las más antiguas
+            sorted_entries = sorted(self._dedup_cache.items(), key=lambda x: x[1][1])
+            for k, _ in sorted_entries[:10]:
+                del self._dedup_cache[k]
+
+        # Verificar si existe
+        if dedup_key in self._dedup_cache:
+            existing_cid, ts = self._dedup_cache[dedup_key]
+            # Solo es duplicado si la notificación original aún está pendiente
+            if existing_cid in self._notifications:
+                existing_state = self._notifications[existing_cid]
+                if existing_state.status == "pending":
+                    return (True, existing_cid)
+
+        return (False, None)
 
     def on_notification(self, data: dict):
         """
@@ -82,12 +144,25 @@ class NotificationManager(QObject):
         """
         cid = data.get("correlation_id", "unknown")
 
+        # Generar clave de deduplicación
+        dedup_key = self._generate_dedup_key(data)
+
+        # Verificar si es duplicada
+        is_dup, existing_cid = self._is_duplicate(dedup_key)
+        if is_dup:
+            print(f"[NotificationManager] Duplicada ignorada: {data.get('title', 'Sin título')} (existente: {existing_cid[:12]}...)")
+            return
+
+        # Registrar en cache de dedup
+        self._dedup_cache[dedup_key] = (cid, time.time())
+
         # Guardar estado
         self._notifications[cid] = NotificationState(
             correlation_id=cid,
             data=data,
             status="pending",
-            created_at=time.time()
+            created_at=time.time(),
+            dedup_key=dedup_key
         )
 
         # Reproducir sonido
@@ -297,6 +372,7 @@ class NotificationManager(QObject):
     def clear_all(self):
         """Elimina todas las notificaciones."""
         self._notifications.clear()
+        self._dedup_cache.clear()
         if self.panel:
             self.panel.clear_all()
 
@@ -305,6 +381,10 @@ class NotificationManager(QObject):
         if correlation_id in self._notifications:
             state = self._notifications[correlation_id]
             state.status = "cancelled"
+
+            # Limpiar del cache de dedup
+            if state.dedup_key and state.dedup_key in self._dedup_cache:
+                del self._dedup_cache[state.dedup_key]
 
             if self.panel:
                 self.panel.update_status(correlation_id, "cancelled")
