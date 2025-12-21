@@ -19,6 +19,10 @@ from core.pushover_client import PushoverClient
 DEDUP_WINDOW_SECONDS = 10.0  # Ventana de tiempo para considerar duplicados
 DEDUP_MAX_ENTRIES = 50  # Máximo de entries en el cache de dedup
 
+# Agrupación de ráfagas: si llegan múltiples notificaciones en este tiempo,
+# solo mostrar 1 y auto-aceptar las demás cuando se acepta la primera
+BURST_WINDOW_MS = 1000  # 1 segundo
+
 
 @dataclass
 class NotificationState:
@@ -76,6 +80,11 @@ class NotificationManager(QObject):
 
         # Cache de deduplicación: dedup_key -> (correlation_id, timestamp)
         self._dedup_cache: Dict[str, tuple] = {}
+
+        # Agrupación de ráfagas: session_id -> [correlation_ids]
+        # Cuando se acepta una, se aceptan todas del mismo grupo
+        self._burst_groups: Dict[str, list] = {}
+        self._last_notification_time: float = 0
 
         # Conectar panel si existe
         if self.panel:
@@ -135,51 +144,89 @@ class NotificationManager(QObject):
 
         return (False, None)
 
-    def on_notification(self, data: dict):
+    def on_notification(self, data: dict) -> bool:
         """
         Callback cuando llega una notificación del servidor.
 
         Args:
             data: Dict con datos de la notificación
+
+        Returns:
+            True si la notificación fue aceptada, False si era duplicada
         """
         cid = data.get("correlation_id", "unknown")
+        session_id = data.get("session_id", "")
+        now = time.time()
 
         # Generar clave de deduplicación
         dedup_key = self._generate_dedup_key(data)
 
-        # Verificar si es duplicada
+        # Debug: mostrar qué se usa para dedup
+        title = data.get("title", "")
+        body = data.get("body", "")
+
+        # Verificar si es duplicada (mismo contenido exacto)
         is_dup, existing_cid = self._is_duplicate(dedup_key)
         if is_dup:
-            print(f"[NotificationManager] Duplicada ignorada: {data.get('title', 'Sin título')} (existente: {existing_cid[:12]}...)")
-            return
+            print(f"[NotificationManager] DUPLICADA IGNORADA: {title} (existente: {existing_cid[:12]}...)")
+            return False  # Indica al servidor que no la guarde
+
+        # Detectar ráfaga: si llega dentro de BURST_WINDOW_MS de la anterior
+        # y es de la misma sesión, agrupar
+        is_burst = False
+        time_since_last = (now - self._last_notification_time) * 1000  # en ms
+
+        if session_id and time_since_last < BURST_WINDOW_MS:
+            # Es parte de una ráfaga
+            if session_id in self._burst_groups and self._burst_groups[session_id]:
+                is_burst = True
+                self._burst_groups[session_id].append(cid)
+                print(f"[NotificationManager] Ráfaga detectada: {title} (grupo={len(self._burst_groups[session_id])} items)")
+
+        # Si no es ráfaga, iniciar nuevo grupo
+        if not is_burst and session_id:
+            self._burst_groups[session_id] = [cid]
+
+        self._last_notification_time = now
 
         # Registrar en cache de dedup
-        self._dedup_cache[dedup_key] = (cid, time.time())
+        self._dedup_cache[dedup_key] = (cid, now)
 
         # Guardar estado
         self._notifications[cid] = NotificationState(
             correlation_id=cid,
             data=data,
-            status="pending",
+            status="pending" if not is_burst else "burst_pending",
             created_at=time.time(),
             dedup_key=dedup_key
         )
 
-        # Reproducir sonido
+        # Si es parte de una ráfaga (no la primera), no mostrar UI
+        if is_burst:
+            print(f"[NotificationManager] Ráfaga silenciosa: {title} (se resolverá con la primera)")
+            return True  # Aceptada pero sin UI
+
+        # Reproducir sonido (solo para la primera de la ráfaga)
         if self.sounds:
             try:
                 self.sounds.play("notification")
             except Exception:
                 self.sounds.play("ding")
 
-        # Mostrar en panel
+        # Mostrar en panel (solo la primera)
         if self.panel:
+            # Si hay más en el grupo, indicar cuántas
+            burst_count = len(self._burst_groups.get(session_id, []))
+            if burst_count > 1:
+                data = data.copy()
+                data["title"] = f"{data.get('title', '')} (+{burst_count - 1} más)"
             self.panel.add_notification(data)
 
         # Enviar push notification si está configurado
         self._send_push_notification(data)
 
         print(f"[NotificationManager] Nueva: {data.get('title', 'Sin título')}")
+        return True  # Notificación aceptada
 
     def on_intent(self, intent_data: dict):
         """
@@ -243,6 +290,20 @@ class NotificationManager(QObject):
             state.status = "completed" if success else "failed"
             state.executed_at = time.time()
             state.intent = action.get("id", "unknown")
+
+            # Resolver también las notificaciones del mismo grupo de ráfaga
+            session_id = state.data.get("session_id", "")
+            if session_id and session_id in self._burst_groups:
+                burst_cids = self._burst_groups[session_id]
+                for burst_cid in burst_cids:
+                    if burst_cid != correlation_id and burst_cid in self._notifications:
+                        burst_state = self._notifications[burst_cid]
+                        if burst_state.status == "burst_pending":
+                            burst_state.status = "completed"
+                            burst_state.executed_at = time.time()
+                            print(f"[NotificationManager] Ráfaga resuelta: {burst_cid[:12]}...")
+                # Limpiar grupo
+                del self._burst_groups[session_id]
 
         # Sonido
         if self.sounds:

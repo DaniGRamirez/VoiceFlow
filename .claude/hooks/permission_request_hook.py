@@ -100,19 +100,25 @@ def build_body(tool_name: str, tool_input: dict) -> str:
         return f"{tool_name}: {str(tool_input)[:60]}"
 
 
-def send_notification(tool_name: str, tool_input: dict, session_id: str) -> bool:
+def send_notification(tool_name: str, tool_input: dict, session_id: str, tool_use_id: str = "") -> bool:
     """Envía notificación a VoiceFlow."""
 
     body = build_body(tool_name, tool_input)
     actions = DEFAULT_ACTIONS
 
+    # Usar tool_use_id como correlation_id para identificar cada acción única
+    # Esto evita conflictos cuando Claude encadena múltiples acciones
+    correlation_id = tool_use_id or str(uuid.uuid4())
+
     payload = {
-        "correlation_id": session_id or str(uuid.uuid4()),
+        "correlation_id": correlation_id,
         "title": f"Claude Code - {tool_name}",
         "body": body,
+        "tool_name": tool_name,  # Agregar para deduplicación
         "type": "confirmation",
         "actions": actions,
         "source": "claude_permission_request",
+        "session_id": session_id,  # Mantener referencia a la sesión
         "timeout_seconds": 120
     }
 
@@ -146,6 +152,7 @@ def main():
         tool_name = input_data.get("tool_name", "unknown")
         tool_input = input_data.get("tool_input", {})
         session_id = input_data.get("session_id", "")
+        tool_use_id = input_data.get("tool_use_id", "")
         permission_mode = input_data.get("permission_mode", "default")
 
         # Verificar si necesita confirmación
@@ -155,9 +162,9 @@ def main():
             sys.exit(0)
 
         # Log para debug
-        print(f"[Hook] Tool: {tool_name}", file=sys.stderr)
+        print(f"[Hook] Tool: {tool_name}, tool_use_id: {tool_use_id}", file=sys.stderr)
 
-        result = send_notification(tool_name, tool_input, session_id)
+        result = send_notification(tool_name, tool_input, session_id, tool_use_id)
         print(f"[Hook] Enviado: {result}", file=sys.stderr)
 
         with open(log_path, "a", encoding="utf-8") as f:

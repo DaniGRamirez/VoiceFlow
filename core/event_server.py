@@ -363,17 +363,28 @@ class EventServer:
             data["timestamp"] = time.time()
             data["status"] = "pending"
 
-            # Guardar
-            self._notifications[data["correlation_id"]] = data
-
-            # Callback
+            # Callback primero (puede rechazar duplicados)
+            accepted = True
             if self.on_notification:
                 try:
-                    self.on_notification(data)
+                    result = self.on_notification(data)
+                    # Si retorna False explícitamente, es duplicada
+                    if result is False:
+                        accepted = False
+                        print(f"[EventServer] Notificación duplicada rechazada: {data['title']}")
+                        return {
+                            "success": True,
+                            "correlation_id": data["correlation_id"],
+                            "message": "Notificación duplicada (ignorada)",
+                            "duplicate": True
+                        }
                 except Exception as e:
                     print(f"[EventServer] Error en callback de notificación: {e}")
 
-            print(f"[EventServer] Nueva notificación: {data['title']}")
+            # Guardar solo si fue aceptada
+            if accepted:
+                self._notifications[data["correlation_id"]] = data
+                print(f"[EventServer] Nueva notificación: {data['title']}")
 
             return {
                 "success": True,
