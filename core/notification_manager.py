@@ -205,3 +205,26 @@ class NotificationManager(QObject):
             if self.panel:
                 self.panel.update_status(correlation_id, "cancelled")
                 self.panel.remove_notification(correlation_id)
+
+    def on_dismiss(self, correlation_id: str):
+        """
+        Callback cuando se recibe un dismiss (ej. desde transcript watcher).
+
+        Esto ocurre cuando el usuario confirmó en VSCode y la herramienta
+        se completó, pero la notificación en VoiceFlow sigue activa.
+
+        Args:
+            correlation_id: ID de la notificación a cerrar
+        """
+        # Actualizar estado interno
+        if correlation_id in self._notifications:
+            state = self._notifications[correlation_id]
+            if state.status == "pending":
+                state.status = "dismissed"
+                state.executed_at = time.time()
+
+        # Cerrar en el panel
+        if self.panel:
+            self.panel.remove_notification(correlation_id)
+
+        print(f"[NotificationManager] Dismiss: {correlation_id[:12]}...")

@@ -216,11 +216,30 @@ def main():
                     host=server_config.get("host", "localhost"),
                     port=server_config.get("port", 8765),
                     on_notification=notification_manager.on_notification,
-                    on_intent=notification_manager.on_intent
+                    on_intent=notification_manager.on_intent,
+                    on_dismiss=notification_manager.on_dismiss
                 )
                 event_server.start()
 
                 print(f"[Notifications] Servidor activo en http://localhost:{server_config.get('port', 8765)}")
+
+                # Iniciar transcript watcher para auto-dismiss de notificaciones
+                try:
+                    from core.transcript_watcher import TranscriptWatcher, find_project_by_name
+
+                    project_path = find_project_by_name("VoiceFlow")
+                    if project_path:
+                        watcher = TranscriptWatcher(
+                            project_path=project_path,
+                            on_tool_complete=lambda tool_id: notification_manager.on_dismiss(tool_id)
+                        )
+                        watcher_thread = threading.Thread(target=watcher.run, daemon=True)
+                        watcher_thread.start()
+                        print(f"[Watcher] Monitoreando transcripts de: {project_path.name}")
+                    else:
+                        print("[Watcher] No se encontró proyecto VoiceFlow en Claude")
+                except Exception as e:
+                    print(f"[Watcher] Error inicializando: {e}")
             else:
                 print("[Notifications] FastAPI no instalado, notificaciones deshabilitadas")
         except ImportError as e:

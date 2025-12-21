@@ -76,7 +76,8 @@ class EventServer:
         host: str = "localhost",
         port: int = 8765,
         on_notification: Optional[Callable[[dict], None]] = None,
-        on_intent: Optional[Callable[[dict], None]] = None
+        on_intent: Optional[Callable[[dict], None]] = None,
+        on_dismiss: Optional[Callable[[str], None]] = None
     ):
         if not FASTAPI_AVAILABLE:
             raise ImportError("FastAPI no instalado. Ejecuta: pip install fastapi uvicorn")
@@ -85,6 +86,7 @@ class EventServer:
         self.port = port
         self.on_notification = on_notification
         self.on_intent = on_intent
+        self.on_dismiss = on_dismiss
 
         self._start_time = time.time()
         self._notifications: Dict[str, dict] = {}
@@ -202,11 +204,19 @@ class EventServer:
 
         @app.delete("/api/notification/{correlation_id}")
         async def delete_notification(correlation_id: str):
-            """Elimina una notificación."""
-            if correlation_id not in self._notifications:
-                raise HTTPException(status_code=404, detail="Notificación no encontrada")
+            """Elimina una notificación (dismiss)."""
+            # Eliminar de nuestra lista interna si existe
+            if correlation_id in self._notifications:
+                del self._notifications[correlation_id]
 
-            del self._notifications[correlation_id]
+            # Callback para notificar al panel
+            if self.on_dismiss:
+                try:
+                    self.on_dismiss(correlation_id)
+                except Exception as e:
+                    print(f"[EventServer] Error en callback de dismiss: {e}")
+
+            print(f"[EventServer] Dismiss: {correlation_id[:12]}...")
             return {"success": True, "message": "Notificación eliminada"}
 
         @app.get("/")
