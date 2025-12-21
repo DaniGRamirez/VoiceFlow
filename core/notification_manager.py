@@ -2,6 +2,7 @@
 NotificationManager - Orquestador de notificaciones.
 
 Conecta el servidor de eventos, el panel de UI y el operador de acciones.
+Opcionalmente envía push notifications via Pushover.
 """
 
 import time
@@ -9,6 +10,8 @@ from typing import Optional, Callable, Dict
 from dataclasses import dataclass
 
 from PyQt6.QtCore import QObject, pyqtSignal
+
+from core.pushover_client import PushoverClient
 
 
 @dataclass
@@ -50,13 +53,17 @@ class NotificationManager(QObject):
         self,
         panel=None,
         execute_callback: Optional[Callable[[dict], bool]] = None,
-        sounds=None
+        sounds=None,
+        pushover_client: Optional[PushoverClient] = None,
+        tailscale_url: Optional[str] = None
     ):
         super().__init__()
 
         self.panel = panel
         self.execute_callback = execute_callback
         self.sounds = sounds
+        self.pushover = pushover_client
+        self.tailscale_url = tailscale_url  # ej: "http://100.x.x.x:8765"
 
         self._notifications: Dict[str, NotificationState] = {}
 
@@ -93,6 +100,9 @@ class NotificationManager(QObject):
         # Mostrar en panel
         if self.panel:
             self.panel.add_notification(data)
+
+        # Enviar push notification si está configurado
+        self._send_push_notification(data)
 
         print(f"[NotificationManager] Nueva: {data.get('title', 'Sin título')}")
 
@@ -227,6 +237,52 @@ class NotificationManager(QObject):
         except Exception as e:
             print(f"[NotificationManager] Error ejecutando intent: {e}")
             return False
+
+    # ========== PUSHOVER ==========
+
+    def _send_push_notification(self, data: dict):
+        """
+        Envía push notification a iPhone via Pushover.
+
+        Args:
+            data: Datos de la notificación
+        """
+        if not self.pushover or not self.pushover.enabled:
+            return
+
+        cid = data.get("correlation_id", "unknown")
+        title = data.get("title", "Claude Code")
+        message = data.get("message", "Confirmación requerida")
+
+        # Extraer información adicional
+        tool_name = data.get("tool_name", "")
+        permission_mode = data.get("permission_mode", "")
+
+        # Construir mensaje más informativo
+        if tool_name:
+            message = f"🔧 {tool_name}\n{message}"
+
+        if permission_mode == "always":
+            message = f"{message}\n⚡ Auto-approve disponible"
+
+        # URL para responder (si hay Tailscale configurado)
+        url = None
+        if self.tailscale_url:
+            url = f"{self.tailscale_url}/api/intent"
+
+        # Enviar
+        self.pushover.send_notification(
+            title=title,
+            message=message,
+            url=url,
+            correlation_id=cid,
+            callback=self._on_push_result
+        )
+
+    def _on_push_result(self, success: bool, response: str):
+        """Callback cuando se completa el envío de push."""
+        if not success:
+            print(f"[NotificationManager] Push falló: {response}")
 
     # ========== API PÚBLICA ==========
 

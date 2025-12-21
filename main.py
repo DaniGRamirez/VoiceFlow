@@ -5,6 +5,26 @@ VoiceFlow - Control por voz para VSCode
 import os
 import sys
 import threading
+import atexit
+import signal
+
+# Forzar flush inmediato en stdout
+sys.stdout.reconfigure(line_buffering=True)
+
+def _exit_handler():
+    print("[ATEXIT] Proceso terminando via atexit", flush=True)
+
+def _signal_handler(signum, frame):
+    print(f"[SIGNAL] Recibida señal {signum}", flush=True)
+    import traceback
+    traceback.print_stack(frame)
+
+atexit.register(_exit_handler)
+signal.signal(signal.SIGTERM, _signal_handler)
+signal.signal(signal.SIGINT, _signal_handler)
+# Windows también tiene SIGBREAK
+if hasattr(signal, 'SIGBREAK'):
+    signal.signal(signal.SIGBREAK, _signal_handler)
 
 from core.state import StateMachine, State
 from core.commands import CommandRegistry, Command
@@ -20,11 +40,12 @@ from config.aliases import (
     GUARDAR_ALIASES, SELECCION_ALIASES, ELIMINAR_ALIASES, BORRAR_ALIASES, BORRA_TODO_ALIASES,
     INICIO_ALIASES, FIN_ALIASES,
     DICTADO_ALIASES, LISTO_ALIASES, CANCELA_ALIASES, ENVIAR_ALIASES,
-    CLAUDIA_ALIASES, CLAUDIA_DICTADO_ALIASES,
+    CODE_ALIASES, CODE_DICTADO_ALIASES,
     ACEPTAR_ALIASES, REPETIR_ALIASES, AYUDA_ALIASES,
     PAUSA_ALIASES, REANUDA_ALIASES, REINICIAR_ALIASES
 )
 from core.logger import get_logger
+from core.pushover_client import PushoverClient
 
 
 DEBUG_MODE = "--debug" in sys.argv or "-d" in sys.argv
@@ -182,6 +203,31 @@ def main():
     dictation_mode = get_dictation_mode()
     actions = Actions(config, debug_mode=DEBUG_MODE, dictation_mode=dictation_mode)
 
+    # ========== LANZAR NAVEGADOR PARA PLAYWRIGHT ==========
+    browser_config = config.get("browser", {})
+    if browser_config.get("auto_launch", False):
+        from core.browser.chrome_launcher import launch_browser_debug, is_chrome_debug_running
+
+        debug_port = browser_config.get("debug_port", 9222)
+        browser_type = browser_config.get("type", "edge")
+        user_data_dir = browser_config.get("user_data_dir")
+
+        if is_chrome_debug_running(debug_port):
+            print(f"[Browser] Ya hay navegador en puerto {debug_port}")
+        else:
+            print(f"[Browser] Lanzando {browser_type} en puerto {debug_port}...")
+            success = launch_browser_debug(
+                port=debug_port,
+                browser=browser_type,
+                user_data_dir=user_data_dir
+            )
+            if success:
+                print(f"[Browser] Listo para Playwright en http://localhost:{debug_port}")
+            else:
+                print(f"[Browser] Error al lanzar navegador")
+    else:
+        print(f"[Browser] Auto-launch desactivado (config: {browser_config})")
+
     # ========== SISTEMA DE NOTIFICACIONES ==========
     notification_panel = None
     notification_manager = None
@@ -203,41 +249,95 @@ def main():
                 )
                 notification_panel.show()
 
+                # Configurar Pushover si está habilitado
+                pushover_config = config.get("pushover", {})
+                pushover_client = None
+                if pushover_config.get("enabled", False):
+                    pushover_client = PushoverClient(pushover_config)
+                    if pushover_client.enabled:
+                        print("[Pushover] Cliente inicializado")
+                    else:
+                        print("[Pushover] Habilitado pero faltan credenciales")
+
+                # Crear servidor de eventos (para obtener tailscale_url)
+                server_config = notifications_config.get("server", {})
+                tailscale_config = config.get("tailscale", {})
+
+                # Determinar URL de Tailscale para push notifications
+                tailscale_url = None
+                if tailscale_config.get("enabled", False):
+                    # Obtener IP de Tailscale
+                    import subprocess
+                    try:
+                        result = subprocess.run(
+                            ["tailscale", "ip", "-4"],
+                            capture_output=True, text=True, timeout=5
+                        )
+                        if result.returncode == 0:
+                            tailscale_ip = result.stdout.strip().split("\n")[0]
+                            server_port = server_config.get("port", 8765)
+                            tailscale_url = f"http://{tailscale_ip}:{server_port}"
+                    except Exception:
+                        pass
+
                 # Crear manager
                 notification_manager = NotificationManager(
                     panel=notification_panel,
                     execute_callback=actions.execute_notification_intent,
-                    sounds=sounds
+                    sounds=sounds,
+                    pushover_client=pushover_client,
+                    tailscale_url=tailscale_url
                 )
 
-                # Crear servidor de eventos
-                server_config = notifications_config.get("server", {})
+                # Determinar host de binding
+                if tailscale_config.get("enabled", False):
+                    bind_host = tailscale_config.get("bind_address", "0.0.0.0")
+                else:
+                    bind_host = server_config.get("host", "localhost")
+
+                server_port = server_config.get("port", 8765)
+
                 event_server = EventServer(
-                    host=server_config.get("host", "localhost"),
-                    port=server_config.get("port", 8765),
+                    host=bind_host,
+                    port=server_port,
                     on_notification=notification_manager.on_notification,
                     on_intent=notification_manager.on_intent,
-                    on_dismiss=notification_manager.on_dismiss
+                    on_dismiss=notification_manager.on_dismiss,
+                    tailscale_config=tailscale_config,
+                    execute_action=actions.execute_notification_intent,
+                    on_command=None  # Se configura después de registrar comandos
                 )
                 event_server.start()
+                # on_command se configura después de crear el registry
 
-                print(f"[Notifications] Servidor activo en http://localhost:{server_config.get('port', 8765)}")
+                if tailscale_config.get("enabled", False):
+                    print(f"[Tailscale] Servidor expuesto en http://{bind_host}:{server_port}")
+                    print(f"[Tailscale] Requiere Bearer token para acceso remoto")
+                else:
+                    print(f"[Notifications] Servidor activo en http://localhost:{server_port}")
 
-                # Iniciar transcript watcher para auto-dismiss de notificaciones
+                # Iniciar transcript watcher para detectar tool_use y auto-dismiss
                 try:
                     from core.transcript_watcher import TranscriptWatcher, find_project_by_name
 
-                    project_path = find_project_by_name("VoiceFlow")
-                    if project_path:
-                        watcher = TranscriptWatcher(
-                            project_path=project_path,
-                            on_tool_complete=lambda tool_id: notification_manager.on_dismiss(tool_id)
-                        )
-                        watcher_thread = threading.Thread(target=watcher.run, daemon=True)
-                        watcher_thread.start()
-                        print(f"[Watcher] Monitoreando transcripts de: {project_path.name}")
+                    watcher_config = config.get("transcript_watcher", {})
+                    if watcher_config.get("enabled", True):
+                        project_path = find_project_by_name("VoiceFlow")
+                        if project_path:
+                            watcher = TranscriptWatcher(
+                                project_path=project_path,
+                                on_tool_complete=lambda tool_id: notification_manager.on_dismiss(tool_id),
+                                verbose=watcher_config.get("verbose", False),
+                                auto_dismiss=watcher_config.get("auto_dismiss_on_result", True)
+                            )
+                            watcher_thread = threading.Thread(target=watcher.run, daemon=True)
+                            watcher_thread.start()
+                            mode = "verbose" if watcher_config.get("verbose") else "confirmaciones"
+                            print(f"[Watcher] Monitoreando transcripts ({mode}): {project_path.name}")
+                        else:
+                            print("[Watcher] No se encontró proyecto VoiceFlow en Claude")
                     else:
-                        print("[Watcher] No se encontró proyecto VoiceFlow en Claude")
+                        print("[Watcher] Deshabilitado en config")
                 except Exception as e:
                     print(f"[Watcher] Error inicializando: {e}")
             else:
@@ -251,14 +351,14 @@ def main():
     registry = CommandRegistry()
 
     registry.register(Command(
-        keywords=CLAUDIA_ALIASES,
+        keywords=CODE_ALIASES,
         action=actions.on_claudia,
         allowed_states=[State.IDLE],
         sound="ding"
     ))
 
     registry.register(Command(
-        keywords=CLAUDIA_DICTADO_ALIASES,
+        keywords=CODE_DICTADO_ALIASES,
         action=lambda: actions.on_claudia_dictado(state_machine),
         allowed_states=[State.IDLE],
         sound="ding"
@@ -271,7 +371,8 @@ def main():
             actions.on_dictado()
         ),
         allowed_states=[State.IDLE],
-        sound="ding"
+        sound="ding",
+        next_state=State.DICTATING  # Para encadenamiento
     ))
 
     registry.register(Command(
@@ -281,7 +382,8 @@ def main():
             state_machine.transition(State.IDLE)
         ),
         allowed_states=[State.DICTATING],
-        sound="success"
+        sound="success",
+        next_state=State.IDLE  # Para encadenamiento
     ))
 
     registry.register(Command(
@@ -291,14 +393,16 @@ def main():
             state_machine.transition(State.IDLE)
         ),
         allowed_states=[State.DICTATING],
-        sound="error"
+        sound="error",
+        next_state=State.IDLE  # Para encadenamiento
     ))
 
     registry.register(Command(
         keywords=ENVIAR_ALIASES,
         action=lambda: actions.on_enviar(state_machine),
         allowed_states=[State.DICTATING],
-        sound="success"
+        sound="success",
+        next_state=State.IDLE  # Para encadenamiento
     ))
 
     # Configurar callbacks de hints para botones clickeables
@@ -477,7 +581,8 @@ def main():
             state_machine.transition(State.PAUSED)
         ),
         allowed_states=[State.IDLE],
-        sound="ding"
+        sound="ding",
+        next_state=State.PAUSED  # Para encadenamiento
     ))
 
     registry.register(Command(
@@ -487,7 +592,8 @@ def main():
             state_machine.transition(State.IDLE)
         ),
         allowed_states=[State.PAUSED],
-        sound="ding"
+        sound="ding",
+        next_state=State.IDLE  # Para encadenamiento
     ))
 
     registry.register(Command(
@@ -525,6 +631,34 @@ def main():
         if custom_commands:
             print(f"[Custom] Total: {len(custom_commands)} comandos personalizados")
 
+    # Configurar callback de comandos HTTP después de registrar todos los comandos
+    if event_server:
+        def on_http_command(text: str) -> dict:
+            """
+            Ejecuta un comando recibido via HTTP (desde iPhone).
+            Retorna dict con resultado de la ejecución.
+            """
+            commands = registry.find_chain(text, state_machine.state)
+
+            if not commands:
+                return {"success": False, "executed": [], "error": f"Comando '{text}' no reconocido"}
+
+            executed = []
+            for cmd in commands:
+                try:
+                    if cmd.sound:
+                        sounds.play(cmd.sound)
+                    overlay.flash_success()
+                    cmd.action()
+                    executed.append(cmd.keywords[0])
+                except Exception as e:
+                    return {"success": False, "executed": executed, "error": str(e)}
+
+            return {"success": True, "executed": executed}
+
+        event_server.on_command = on_http_command
+        print(f"[HTTP] Endpoint /api/command habilitado para comandos remotos")
+
     # Conectar estado a UI
     def on_state_change(old: State, new: State):
         overlay.set_state(new)
@@ -548,28 +682,62 @@ def main():
 
     # Callback cuando el motor reconoce algo
     def on_speech(text: str):
-        print(f"  {text}")
+        from PyQt6.QtCore import QTimer
+        try:
+            print(f"  {text}", flush=True)
+            print(f"[on_speech] Procesando: '{text}'", flush=True)
 
-        cmd = registry.find(text, state_machine.state)
-        if cmd:
-            print(f"   -> {cmd.keywords[0]}")
-            if cmd.sound:
-                sounds.play(cmd.sound)
-            overlay.flash_success()
-            overlay.show_text(cmd.keywords[0], is_command=True)  # Spore de comando
-            logger.log_command(cmd.keywords[0], text)  # Registrar comando
-            cmd.action()
-        else:
-            if state_machine.state == State.IDLE:
-                print(f"   (ignorado)")
-                overlay.flash_unknown()
-                logger.log_ignored(text)  # Registrar texto ignorado
-                # Mostrar auto-ayuda si es motor wake-word y hay comando inválido
-                if is_wake_word_engine and text:
-                    show_auto_help()
-            # Mostrar texto reconocido como spore efímero
-            if text:
-                overlay.show_text(text, is_command=False)
+            # Usar find_chain para detectar múltiples comandos
+            commands = registry.find_chain(text, state_machine.state)
+
+            if commands:
+                # Mostrar todos los comandos detectados
+                cmd_names = [cmd.keywords[0] for cmd in commands]
+                print(f"   -> {' + '.join(cmd_names)}", flush=True)
+                print(f"[on_speech] Comandos encontrados: {len(commands)}", flush=True)
+
+                # Ejecutar comandos en secuencia con delay usando QTimer
+                def execute_command(index: int):
+                    if index >= len(commands):
+                        return
+                    cmd = commands[index]
+                    if cmd.sound:
+                        sounds.play(cmd.sound)
+                    overlay.flash_success()
+                    overlay.show_text(cmd.keywords[0], is_command=True)
+                    logger.log_command(cmd.keywords[0], text if index == 0 else f"(chain: {text})")
+                    cmd.action()
+
+                    # Programar siguiente comando con delay
+                    if index < len(commands) - 1:
+                        QTimer.singleShot(150, lambda: execute_command(index + 1))
+
+                # Iniciar ejecución del primer comando
+                execute_command(0)
+            else:
+                print(f"[on_speech] Sin comandos, state={state_machine.state}", flush=True)
+                if state_machine.state == State.IDLE:
+                    print(f"   (ignorado)", flush=True)
+                    print(f"[on_speech] Antes de flash_unknown", flush=True)
+                    overlay.flash_unknown()
+                    print(f"[on_speech] Después de flash_unknown", flush=True)
+                    logger.log_ignored(text)  # Registrar texto ignorado
+                    print(f"[on_speech] Después de log_ignored", flush=True)
+                    # Mostrar auto-ayuda si es motor wake-word y hay comando inválido
+                    if is_wake_word_engine and text:
+                        print(f"[on_speech] Antes de show_auto_help", flush=True)
+                        show_auto_help()
+                        print(f"[on_speech] Después de show_auto_help", flush=True)
+                # Mostrar texto reconocido como spore efímero
+                if text:
+                    print(f"[on_speech] Antes de show_text", flush=True)
+                    overlay.show_text(text, is_command=False)
+                    print(f"[on_speech] Después de show_text", flush=True)
+            print(f"[on_speech] Finalizado", flush=True)
+        except Exception as e:
+            print(f"[ERROR on_speech] {type(e).__name__}: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
 
     # Conectar modo silencioso (pulsar espacio para escribir comandos)
     overlay.set_silent_input_callback(on_speech)
@@ -769,12 +937,26 @@ def main():
         from PyQt6.QtWidgets import QApplication
         app = QApplication.instance()
         if app:
-            app.exec()
+            # Detectar cuando Qt va a cerrar
+            def on_about_to_quit():
+                print("[Main] aboutToQuit signal recibido - Qt se está cerrando")
+                import traceback
+                print("[Main] Stack trace:")
+                traceback.print_stack()
+
+            app.aboutToQuit.connect(on_about_to_quit)
+
+            print("[Main] Iniciando event loop de Qt...")
+            exit_code = app.exec()
+            print(f"[Main] Event loop terminó con código: {exit_code}")
     except KeyboardInterrupt:
-        pass
+        print("[Main] KeyboardInterrupt recibido")
     except Exception as e:
-        print(f"\n[ERROR] {e}")
+        print(f"\n[ERROR Main] {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
+        print("[Main] Entrando en finally - limpiando...")
         # Guardar log de sesión
         print(logger.get_session_summary())
         logger.save()

@@ -73,6 +73,38 @@ DEFAULT_CONFIG = {
     "custom_commands": {
         "enabled": True,  # Cargar comandos custom al iniciar
         "allow_dangerous_actions": False  # Si True, permite shell/run/script
+    },
+
+    # Transcript Watcher (monitorea Claude Code)
+    "transcript_watcher": {
+        "enabled": True,  # Activar monitoreo de transcripts
+        "verbose": False,  # True = notificar TODAS las herramientas (info verde)
+                          # False = solo herramientas que requieren confirmación
+        "auto_dismiss_on_result": True,  # Dismiss automático cuando tool completa
+        "stack_notifications": True  # Apilar notificaciones en modo verbose
+    },
+
+    # Tailscale (acceso remoto desde iPhone)
+    "tailscale": {
+        "enabled": False,  # Activar exposición remota via Tailscale
+        "bind_address": "0.0.0.0",  # IP de binding (0.0.0.0 = todas las interfaces)
+        "bearer_token": "",  # Token de autenticación (REQUERIDO si enabled=True)
+        "allowed_ips": [],  # Lista blanca de IPs (vacío = solo validar token)
+        "log_requests": True,  # Logging de latencia/IP para métricas
+        "metrics_file": "logs/tailscale_metrics.json"  # Archivo de métricas
+    },
+
+    # Pushover (notificaciones push a iPhone)
+    "pushover": {
+        "enabled": False,  # Activar notificaciones push
+        "user_key": "",  # User Key de Pushover (REQUERIDO)
+        "api_token": "",  # API Token de Pushover (REQUERIDO)
+        "device": "",  # Dispositivo específico (vacío = todos)
+        "priority": 1,  # -2 a 2 (1 = alta, bypass quiet hours)
+        "sound": "pushover",  # Sonido de notificación
+        "url_title": "Responder",  # Texto del botón URL
+        "expire": 300,  # Segundos para expirar (priority 2)
+        "retry": 30  # Segundos entre reintentos (priority 2)
     }
 }
 
