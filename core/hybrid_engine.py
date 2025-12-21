@@ -24,6 +24,15 @@ from typing import Callable, Optional, List
 import sounddevice as sd
 import pyautogui
 
+from core.constants import (
+    OVERLAY_READY_TIMEOUT,
+    OVERLAY_READY_DELAY,
+    WIN_H_ACTIVATION_DELAY,
+    HOTKEY_RELEASE_DELAY,
+    WAKE_COOLDOWN_HYBRID,
+    AUDIO_POLL_INTERVAL,
+)
+
 # Para captura de dictado con overlay
 from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
 from PyQt6.QtWidgets import QApplication
@@ -46,7 +55,7 @@ def _loading_animation(stop_event, message):
         sys.stdout.write(f"\r[Hybrid] {message} {chars[i % len(chars)]}")
         sys.stdout.flush()
         i += 1
-        time.sleep(0.1)
+        time.sleep(AUDIO_POLL_INTERVAL)
     sys.stdout.write("\r" + " " * 60 + "\r")
     sys.stdout.flush()
 
@@ -75,6 +84,7 @@ class HybridEngine:
                  oww_threshold: float = 0.5,
                  command_window: float = 3.0,  # Default from config
                  on_state_change: Optional[Callable[[str], None]] = None,
+                 on_timeout: Optional[Callable[[], None]] = None,
                  capture_overlay=None):
         """
         Inicializa el motor híbrido.
@@ -91,6 +101,7 @@ class HybridEngine:
             oww_threshold: Umbral de detección OWW (0-1)
             command_window: Segundos para capturar comando tras wake
             on_state_change: Callback cuando cambia estado interno
+            on_timeout: Callback cuando hay timeout sin comando (para auto-ayuda)
             capture_overlay: Instancia de CaptureOverlay para capturar dictado
         """
         if not OWW_AVAILABLE:
@@ -99,6 +110,7 @@ class HybridEngine:
         self.on_result = on_result
         self.on_mic_level = on_mic_level
         self.on_state_change = on_state_change
+        self.on_timeout = on_timeout
         self._queue = queue.Queue()
         self._running = False
         self._gain = gain
@@ -135,7 +147,7 @@ class HybridEngine:
 
         # Cooldown para evitar detecciones repetidas
         self._last_wake_time = 0
-        self._wake_cooldown = 1.5  # Segundos entre detecciones
+        self._wake_cooldown = WAKE_COOLDOWN_HYBRID  # Segundos entre detecciones
 
         # Overlay de captura (se pasa desde main.py)
         self._capture_overlay = capture_overlay
@@ -144,6 +156,7 @@ class HybridEngine:
         self._capture_event = threading.Event()
         self._ready_event = threading.Event()
         self._captured_text = ""
+        self._capture_lock = threading.Lock()  # Protege _captured_text
 
         # Conectar signal de ready del overlay
         if capture_overlay:
@@ -160,22 +173,25 @@ class HybridEngine:
 
     def _audio_callback(self, indata, frames, time_info, status):
         """Callback de audio de sounddevice."""
-        if status:
-            print(f"[Hybrid] Audio status: {status}")
+        try:
+            if status:
+                print(f"[Hybrid] Audio status: {status}")
 
-        audio_data = np.frombuffer(indata, dtype=np.int16).copy()
+            audio_data = np.frombuffer(indata, dtype=np.int16).copy()
 
-        if self._gain > 1.0:
-            amplified = audio_data.astype(np.float32) * self._gain
-            amplified = np.clip(amplified, -32768, 32767)
-            audio_data = amplified.astype(np.int16)
+            if self._gain > 1.0:
+                amplified = audio_data.astype(np.float32) * self._gain
+                amplified = np.clip(amplified, -32768, 32767)
+                audio_data = amplified.astype(np.int16)
 
-        self._queue.put(audio_data)
+            self._queue.put(audio_data)
 
-        if self.on_mic_level:
-            rms = np.sqrt(np.mean(audio_data.astype(np.float32) ** 2))
-            level = min(1.0, rms / self._mic_threshold)
-            self.on_mic_level(level)
+            if self.on_mic_level:
+                rms = np.sqrt(np.mean(audio_data.astype(np.float32) ** 2))
+                level = min(1.0, rms / self._mic_threshold)
+                self.on_mic_level(level)
+        except Exception as e:
+            print(f"[Hybrid] Error en audio callback: {e}")
 
     def _on_overlay_ready(self):
         """Callback cuando el overlay está listo para recibir input."""
@@ -184,7 +200,8 @@ class HybridEngine:
 
     def _on_capture_done(self, text: str):
         """Callback cuando el overlay termina de capturar."""
-        self._captured_text = text
+        with self._capture_lock:
+            self._captured_text = text
         self._capture_event.set()
 
     def _capture_command_winh(self) -> Optional[str]:
@@ -221,19 +238,19 @@ class HybridEngine:
 
         # Esperar a que el overlay esté listo (máximo 2 segundos)
         print("[Hybrid] Esperando overlay ready...")
-        if not self._ready_event.wait(timeout=2.0):
+        if not self._ready_event.wait(timeout=OVERLAY_READY_TIMEOUT * 2):
             print("[Hybrid] Timeout esperando overlay ready")
             return None
 
         # Pequeña pausa para asegurar que el overlay tiene foco
-        time.sleep(0.2)
+        time.sleep(OVERLAY_READY_DELAY)
 
         print("[Hybrid] Activando Win+H...")
         # Activar Win+H - escribirá en el campo del overlay
         pyautogui.hotkey('win', 'h')
 
         # Esperar a que Win+H se active
-        time.sleep(0.3)
+        time.sleep(WIN_H_ACTIVATION_DELAY)
 
         # Esperar a que termine la captura (timeout + un poco más)
         if not self._capture_event.wait(timeout=self._command_window + 2):
@@ -241,10 +258,11 @@ class HybridEngine:
             return None
 
         # Cerrar Win+H panel
-        time.sleep(0.2)
+        time.sleep(HOTKEY_RELEASE_DELAY)
         pyautogui.press('escape')
 
-        texto = self._captured_text.strip()
+        with self._capture_lock:
+            texto = self._captured_text.strip()
         if texto:
             print(f"[Hybrid] Comando capturado: '{texto}'")
             return texto
@@ -346,6 +364,8 @@ class HybridEngine:
                                 else:
                                     # Si no se capturó nada, volver a IDLE
                                     print("[Hybrid] Timeout sin comando (captura vacía)")
+                                    if self.on_timeout:
+                                        self.on_timeout()
 
                                 # Cooldown SIEMPRE después de captura (con o sin texto)
                                 # Esto evita falsos positivos por audio residual

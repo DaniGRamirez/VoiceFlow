@@ -166,11 +166,16 @@ class ActionExecutor:
             script_path = action["path"]
             use_terminal = action.get("terminal", False)
 
+            # Convertir a ruta absoluta y validar path traversal
+            if not os.path.isabs(script_path):
+                script_path = os.path.join(BASE_DIR, script_path)
+            script_path = os.path.realpath(script_path)
+            base_dir_real = os.path.realpath(BASE_DIR)
+            if not script_path.startswith(base_dir_real):
+                raise ValueError(f"Path traversal detectado en script: {action['path']}")
+
             if use_terminal:
                 # Abrir en terminal separada (Windows)
-                # Convertir a ruta absoluta
-                if not os.path.isabs(script_path):
-                    script_path = os.path.join(BASE_DIR, script_path)
                 print(f"[Script] Abriendo terminal: {script_path}")
                 subprocess.Popen(["cmd", "/c", "start", "cmd", "/k", "python", script_path])
             else:
@@ -190,6 +195,12 @@ class ActionExecutor:
             template_path = action["template"]
             if not os.path.isabs(template_path):
                 template_path = os.path.join(BASE_DIR, template_path)
+
+            # Validar path traversal
+            template_path = os.path.realpath(template_path)
+            base_dir_real = os.path.realpath(BASE_DIR)
+            if not template_path.startswith(base_dir_real):
+                raise ValueError(f"Path traversal detectado en template: {action['template']}")
 
             with open(template_path, 'r', encoding='utf-8') as f:
                 template = json.load(f)

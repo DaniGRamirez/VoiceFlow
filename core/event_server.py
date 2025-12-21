@@ -161,9 +161,8 @@ class EventServer:
             if client_ip in ("127.0.0.1", "localhost", "::1"):
                 return True
 
-            # Si Tailscale no está habilitado, permitir todo (modo local)
-            if not self._tailscale_enabled:
-                return True
+            # Para IPs remotas, SIEMPRE requerir auth (independiente de tailscale_enabled)
+            # Esto previene bypass de auth cuando el servidor está expuesto sin Tailscale
 
             # Lista blanca de IPs (si está configurada)
             if self._allowed_ips and client_ip not in self._allowed_ips:

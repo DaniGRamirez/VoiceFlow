@@ -32,7 +32,8 @@ TOOLS_NEED_CONFIRM = {"Write", "Edit", "NotebookEdit", "Bash"}
 BASH_AUTO_APPROVED = [
     "git add", "git commit", "git push", "git status", "git diff", "git log",
     "python -c", "python -m py_compile", "python ", "timeout 5 python",
-    "pip install", "dir", "wc", "echo", "cat", "ls", "pwd", "cd"
+    "pip install", "dir", "wc", "echo", "cat", "ls", "pwd", "cd",
+    "curl"  # Para testing de APIs
 ]
 
 
@@ -43,11 +44,15 @@ class TranscriptWatcher:
         self,
         project_path: Path,
         on_tool_use: Optional[Callable] = None,
-        on_tool_complete: Optional[Callable] = None
+        on_tool_complete: Optional[Callable] = None,
+        verbose: bool = False,
+        auto_dismiss: bool = True
     ):
         self.project_path = project_path
         self.on_tool_use = on_tool_use or self._default_tool_use_handler
         self.on_tool_complete = on_tool_complete or self._default_tool_complete_handler
+        self.verbose = verbose  # True = notificar TODAS las herramientas
+        self.auto_dismiss = auto_dismiss
         self.file_positions: dict[Path, int] = {}
         self.seen_tool_ids: set[str] = set()
         self.seen_result_ids: set[str] = set()
@@ -116,8 +121,14 @@ class TranscriptWatcher:
 
                 if tool_id not in self.seen_tool_ids:
                     self.seen_tool_ids.add(tool_id)
-                    if self._needs_confirmation(tool_name, tool_input):
-                        self.on_tool_use(tool_name, tool_input, tool_id)
+                    needs_confirm = self._needs_confirmation(tool_name, tool_input)
+
+                    if self.verbose:
+                        # Modo verbose: notificar TODAS las herramientas
+                        self.on_tool_use(tool_name, tool_input, tool_id, needs_confirm)
+                    elif needs_confirm:
+                        # Modo normal: solo herramientas que requieren confirmación
+                        self.on_tool_use(tool_name, tool_input, tool_id, True)
 
             # Detectar tool_result (herramienta completada)
             elif msg_type == "user" and block_type == "tool_result":
@@ -141,9 +152,10 @@ class TranscriptWatcher:
 
         return new_content.strip().split("\n") if new_content.strip() else []
 
-    def _default_tool_use_handler(self, tool_name: str, tool_input: dict, tool_id: str):
+    def _default_tool_use_handler(self, tool_name: str, tool_input: dict, tool_id: str, needs_confirm: bool = True):
         """Handler por defecto para tool_use: imprime y envía notificación."""
-        print(f"[Watcher] Tool: {tool_name} (ID: {tool_id[:12]}...)", flush=True)
+        mode = "confirm" if needs_confirm else "info"
+        print(f"[Watcher] Tool: {tool_name} ({mode}, ID: {tool_id[:12]}...)", flush=True)
 
         # Construir descripción
         if tool_name == "Write":
@@ -155,31 +167,59 @@ class TranscriptWatcher:
         elif tool_name == "Bash":
             command = tool_input.get("command", "")[:60]
             body = f"$ {command}"
+        elif tool_name == "Read":
+            file_path = tool_input.get("file_path", "unknown")
+            body = f"Leer: {Path(file_path).name}"
+        elif tool_name == "Glob":
+            pattern = tool_input.get("pattern", "")
+            body = f"Buscar: {pattern}"
+        elif tool_name == "Grep":
+            pattern = tool_input.get("pattern", "")[:40]
+            body = f"Grep: {pattern}"
+        elif tool_name == "Task":
+            desc = tool_input.get("description", "")[:40]
+            body = f"Agent: {desc}"
+        elif tool_name == "TodoWrite":
+            body = "Actualizando tareas"
         else:
             body = f"{tool_name}"
 
         # Enviar a VoiceFlow
-        self._send_notification(tool_name, body, tool_id)
+        self._send_notification(tool_name, body, tool_id, needs_confirm)
 
     def _default_tool_complete_handler(self, tool_use_id: str):
         """Handler por defecto para tool_result: envía dismiss."""
         print(f"[Watcher] Completado: {tool_use_id[:12]}...", flush=True)
         self._send_dismiss(tool_use_id)
 
-    def _send_notification(self, tool_name: str, body: str, tool_id: str):
+    def _send_notification(self, tool_name: str, body: str, tool_id: str, needs_confirm: bool = True):
         """Envía notificación a VoiceFlow."""
-        payload = {
-            "correlation_id": tool_id,
-            "title": f"Claude Code - {tool_name}",
-            "body": body,
-            "type": "confirmation",
-            "actions": [
-                {"id": "accept", "label": "Aceptar", "hotkey": "1", "style": "primary"},
-                {"id": "cancel", "label": "Cancelar", "hotkey": "escape", "style": "danger"}
-            ],
-            "source": "transcript_watcher",
-            "timeout_seconds": 120
-        }
+        if needs_confirm:
+            # Notificación de confirmación (amarillo/naranja con botones)
+            payload = {
+                "correlation_id": tool_id,
+                "title": f"Claude Code - {tool_name}",
+                "body": body,
+                "type": "confirmation",
+                "actions": [
+                    {"id": "accept", "label": "Aceptar", "hotkey": "1", "style": "primary"},
+                    {"id": "cancel", "label": "Cancelar", "hotkey": "escape", "style": "danger"}
+                ],
+                "source": "transcript_watcher",
+                "timeout_seconds": 120
+            }
+        else:
+            # Notificación informativa (verde, sin botones, auto-dismiss)
+            payload = {
+                "correlation_id": tool_id,
+                "title": tool_name,
+                "body": body,
+                "type": "info",
+                "actions": [],
+                "source": "transcript_watcher",
+                "timeout_seconds": 5,  # Auto-dismiss rápido
+                "style": "success"  # Estilo verde
+            }
 
         try:
             data = json.dumps(payload).encode("utf-8")
@@ -188,8 +228,8 @@ class TranscriptWatcher:
                 data=data,
                 headers={"Content-Type": "application/json"}
             )
-            response = urlopen(req, timeout=TIMEOUT)
-            success = response.status == 200
+            with urlopen(req, timeout=TIMEOUT) as response:
+                success = response.status == 200
             print(f"[Watcher] Notificación enviada: {success}", flush=True)
         except URLError as e:
             print(f"[Watcher] VoiceFlow no disponible: {e}", flush=True)
@@ -203,8 +243,8 @@ class TranscriptWatcher:
 
         try:
             req = Request(dismiss_url, method="DELETE")
-            response = urlopen(req, timeout=TIMEOUT)
-            success = response.status == 200
+            with urlopen(req, timeout=TIMEOUT) as response:
+                success = response.status == 200
             if success:
                 print(f"[Watcher] Dismiss enviado: {tool_use_id[:12]}...", flush=True)
         except URLError:

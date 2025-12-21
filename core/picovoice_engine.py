@@ -24,6 +24,15 @@ from typing import Callable, Optional
 
 import pyautogui
 
+from core.constants import (
+    OVERLAY_READY_TIMEOUT,
+    OVERLAY_READY_DELAY,
+    WIN_H_ACTIVATION_DELAY,
+    HOTKEY_RELEASE_DELAY,
+    WAKE_COOLDOWN_PICOVOICE,
+    STATUS_LOG_INTERVAL,
+)
+
 # Importar Picovoice Porcupine
 try:
     import pvporcupine
@@ -61,6 +70,7 @@ class PicovoiceHybridEngine:
                  sensitivity: float = 0.7,
                  command_window: float = 5.0,
                  on_state_change: Optional[Callable[[str], None]] = None,
+                 on_timeout: Optional[Callable[[], None]] = None,
                  capture_overlay=None):
         """
         Inicializa el motor híbrido Picovoice.
@@ -79,6 +89,7 @@ class PicovoiceHybridEngine:
             sensitivity: Sensibilidad de detección (0-1, mayor = más sensible)
             command_window: Segundos para capturar comando tras wake
             on_state_change: Callback cuando cambia estado interno
+            on_timeout: Callback cuando hay timeout sin comando (para auto-ayuda)
             capture_overlay: Instancia de CaptureOverlay para capturar dictado
         """
         if not PORCUPINE_AVAILABLE:
@@ -90,6 +101,7 @@ class PicovoiceHybridEngine:
         self.on_result = on_result
         self.on_mic_level = on_mic_level
         self.on_state_change = on_state_change
+        self.on_timeout = on_timeout
         self._running = False
         self._mic_threshold = mic_threshold
         self._sensitivity = sensitivity
@@ -154,7 +166,7 @@ class PicovoiceHybridEngine:
 
         # Cooldown para evitar detecciones repetidas
         self._last_wake_time = 0
-        self._wake_cooldown = 1.0  # Segundos entre detecciones (reducido)
+        self._wake_cooldown = WAKE_COOLDOWN_PICOVOICE  # Segundos entre detecciones
 
         # Overlay de captura (se pasa desde main.py)
         self._capture_overlay = capture_overlay
@@ -163,6 +175,7 @@ class PicovoiceHybridEngine:
         self._capture_event = threading.Event()
         self._ready_event = threading.Event()
         self._captured_text = ""
+        self._capture_lock = threading.Lock()  # Protege _captured_text
 
         # Conectar signal de ready del overlay
         if capture_overlay:
@@ -187,7 +200,8 @@ class PicovoiceHybridEngine:
 
     def _on_capture_done(self, text: str):
         """Callback cuando el overlay termina de capturar."""
-        self._captured_text = text
+        with self._capture_lock:
+            self._captured_text = text
         self._capture_event.set()
 
     def _capture_command_winh(self) -> Optional[str]:
@@ -223,18 +237,18 @@ class PicovoiceHybridEngine:
 
         # Esperar a que el overlay esté listo (máximo 1 segundo)
         print("[Picovoice] Esperando overlay ready...")
-        if not self._ready_event.wait(timeout=1.0):
+        if not self._ready_event.wait(timeout=OVERLAY_READY_TIMEOUT):
             print("[Picovoice] Timeout esperando overlay ready")
             return None
 
         # Pequeña pausa para asegurar que el overlay tiene foco
-        time.sleep(0.2)
+        time.sleep(OVERLAY_READY_DELAY)
 
         print("[Picovoice] Activando Win+H...")
         pyautogui.hotkey('win', 'h')
 
         # Esperar a que Win+H se active
-        time.sleep(0.3)
+        time.sleep(WIN_H_ACTIVATION_DELAY)
 
         # Esperar a que termine la captura
         if not self._capture_event.wait(timeout=self._command_window + 1):
@@ -242,10 +256,11 @@ class PicovoiceHybridEngine:
             return None
 
         # Cerrar Win+H panel
-        time.sleep(0.2)
+        time.sleep(HOTKEY_RELEASE_DELAY)
         pyautogui.press('escape')
 
-        texto = self._captured_text.strip()
+        with self._capture_lock:
+            texto = self._captured_text.strip()
         if texto:
             print(f"[Picovoice] Comando capturado: '{texto}'")
             return texto
@@ -284,9 +299,9 @@ class PicovoiceHybridEngine:
                 if self._state != self.STATE_IDLE:
                     continue
 
-                # Log de status cada 5 segundos
+                # Log de status periódico
                 current_time = time.time()
-                if current_time - self._last_status_time >= 5.0:
+                if current_time - self._last_status_time >= STATUS_LOG_INTERVAL:
                     print(f"[Picovoice] Status: {self._frame_count} frames, sensibilidad={self._sensitivity}")
                     self._last_status_time = current_time
 
@@ -315,6 +330,8 @@ class PicovoiceHybridEngine:
                             self.on_result(comando)
                         else:
                             print("[Picovoice] Timeout sin comando (captura vacía)")
+                            if self.on_timeout:
+                                self.on_timeout()
 
                         # Cooldown después de captura
                         self._last_wake_time = time.time()

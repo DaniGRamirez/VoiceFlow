@@ -957,15 +957,32 @@ def main():
         traceback.print_exc()
     finally:
         print("[Main] Entrando en finally - limpiando...")
+
         # Guardar log de sesión
-        print(logger.get_session_summary())
-        logger.save()
+        try:
+            print(logger.get_session_summary())
+            logger.save()
+        except Exception as e:
+            print(f"[Main] Error guardando log: {e}")
 
         # SIEMPRE liberar teclas al salir
-        actions.release_keys()
-        if engine:
-            engine.stop()
-        overlay.quit()
+        try:
+            actions.release_keys()
+        except Exception as e:
+            print(f"[Main] Error liberando teclas: {e}")
+
+        # Detener engine
+        try:
+            if engine:
+                engine.stop()
+        except Exception as e:
+            print(f"[Main] Error deteniendo engine: {e}")
+
+        # Cerrar overlay
+        try:
+            overlay.quit()
+        except Exception as e:
+            print(f"[Main] Error cerrando overlay: {e}")
 
 
 if __name__ == "__main__":
