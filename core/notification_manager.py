@@ -94,7 +94,7 @@ class NotificationManager(QObject):
         if self.sounds:
             try:
                 self.sounds.play("notification")
-            except:
+            except Exception:
                 self.sounds.play("ding")
 
         # Mostrar en panel

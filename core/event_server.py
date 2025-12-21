@@ -273,13 +273,19 @@ class EventServer:
             version="1.0.0"
         )
 
-        # CORS para permitir requests desde otras fuentes
+        # CORS - restringir a localhost y redes Tailscale (100.x.x.x)
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
+            allow_origins=[
+                "http://localhost",
+                "http://localhost:*",
+                "http://127.0.0.1",
+                "http://127.0.0.1:*",
+            ],
+            allow_origin_regex=r"^http://100\.\d+\.\d+\.\d+(:\d+)?$",  # Tailscale CGNAT
             allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
+            allow_methods=["GET", "POST", "DELETE"],
+            allow_headers=["Authorization", "Content-Type"],
         )
 
         # Crear dependencia de autenticación

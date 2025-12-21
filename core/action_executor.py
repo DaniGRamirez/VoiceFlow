@@ -7,6 +7,7 @@ Soporta interpolación de variables y permisos para acciones peligrosas.
 
 import json
 import os
+import shlex
 import subprocess
 import time
 import webbrowser
@@ -132,9 +133,19 @@ class ActionExecutor:
 
         elif action_type == "shell":
             timeout = action.get("timeout", 10)
+            cmd = action["cmd"]
+            # Usar shlex.split para evitar shell injection (solo en comandos simples)
+            # Si el comando requiere shell features (pipes, redirects), usar cmd /c
+            if any(c in cmd for c in ['|', '>', '<', '&&', '||']):
+                # Comando con shell features - ejecutar via cmd
+                cmd_parts = ["cmd", "/c", cmd]
+            else:
+                # Comando simple - parsear argumentos de forma segura
+                cmd_parts = shlex.split(cmd, posix=False)  # posix=False para Windows
+
             result = subprocess.run(
-                action["cmd"],
-                shell=True,
+                cmd_parts,
+                shell=False,
                 capture_output=True,
                 timeout=timeout,
                 text=True
@@ -147,7 +158,7 @@ class ActionExecutor:
         elif action_type == "run":
             args = action.get("args", [])
             program = action["program"]
-            subprocess.Popen([program] + args, shell=True)
+            subprocess.Popen([program] + args, shell=False)
 
         elif action_type == "script":
             # Out-of-process para seguridad
@@ -220,7 +231,9 @@ class ActionExecutor:
             executor = BAE()
             browser_actions = action.get("actions", [])
             if not executor.execute(browser_actions, command_name="browser"):
-                raise RuntimeError("Falló la ejecución de acciones browser")
+                # Usar mensaje de error específico si existe
+                error_msg = executor.last_error or "Falló la ejecución de acciones browser"
+                raise RuntimeError(error_msg)
 
         elif action_type == "tts":
             # Text-to-Speech via provider web

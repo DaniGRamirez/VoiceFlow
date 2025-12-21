@@ -102,8 +102,8 @@ def _emergency_release():
         try:
             pyautogui.keyUp('win')
             pyautogui.keyUp('ctrl')
-        except:
-            pass
+        except Exception:
+            pass  # Ignorar errores en cleanup de emergencia
 
 
 def _signal_handler(signum, frame):
@@ -382,8 +382,8 @@ if ($hwnd) {
 
         # Descripciones de comandos (user-friendly)
         descriptions = {
-            "claudia": "Abre chat de Claude en VSCode",
-            "claudia dictado": "Abre Claude y empieza a dictar",
+            "code": "Abre chat de Claude en VSCode",
+            "code dictado": "Abre Claude y empieza a dictar",
             "dictado": "Empieza a dictar texto",
             "listo": "Termina y envía el dictado",
             "cancela": "Cancela sin enviar",
@@ -562,15 +562,16 @@ if ($hwnd) {
 
         Args:
             action: Dict con:
-                - id: Identificador de la acción (ej: "accept", "cancel", "option_1")
+                - id: Identificador de la acción (ej: "accept", "cancel", "option_1", "vscode")
                 - hotkey: Tecla o combinación a presionar (ej: "enter", "escape", "ctrl+enter")
+                          Si es None, solo enfoca VS Code sin ejecutar hotkey
                 - label: Etiqueta de la acción (para logging)
 
         Returns:
             True si se ejecutó correctamente
         """
         action_id = action.get("id", "unknown")
-        hotkey = action.get("hotkey", "enter")
+        hotkey = action.get("hotkey")
         label = action.get("label", action_id)
 
         print(f"[Actions] Ejecutando intent: {label} (hotkey: {hotkey})")
@@ -578,16 +579,17 @@ if ($hwnd) {
         try:
             # 1. Enfocar VS Code
             self._focus_vscode()
-            time.sleep(0.2)
 
-            # 2. Ejecutar hotkey
-            if "+" in hotkey:
-                # Combinación de teclas (ej: "ctrl+enter", "alt+1")
-                keys = hotkey.split("+")
-                pyautogui.hotkey(*keys)
-            else:
-                # Tecla simple (ej: "enter", "escape", "1", "2", "tab")
-                pyautogui.press(hotkey)
+            # 2. Ejecutar hotkey (si existe)
+            if hotkey:
+                time.sleep(0.2)
+                if "+" in hotkey:
+                    # Combinación de teclas (ej: "ctrl+enter", "alt+1")
+                    keys = hotkey.split("+")
+                    pyautogui.hotkey(*keys)
+                else:
+                    # Tecla simple (ej: "enter", "escape", "1", "2", "tab")
+                    pyautogui.press(hotkey)
 
             print(f"[Actions] Intent ejecutado: {label}")
             return True
