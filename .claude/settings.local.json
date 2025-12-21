@@ -10,7 +10,31 @@
       "Bash(timeout 5 python:*)",
       "Bash(pip install:*)",
       "Bash(dir /s /b \"c:\\Users\\danig\\OneDrive\\Documentos\\Proyectos\\VoiceFlow\\logs\")",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(wc:*)",
+      "Bash(cat:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"c:\\Users\\danig\\OneDrive\\Documentos\\Proyectos\\VoiceFlow\\.claude\\hooks\\permission_request_hook.py\""
+          }
+        ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"c:\\Users\\danig\\OneDrive\\Documentos\\Proyectos\\VoiceFlow\\.claude\\hooks\\permission_request_hook.py\""
+          }
+        ]
+      }
     ]
   }
 }

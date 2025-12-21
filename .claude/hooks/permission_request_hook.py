@@ -35,6 +35,46 @@ DEFAULT_ACTIONS = [
     {"id": "cancel", "label": "Cancelar", "hotkey": "escape", "style": "danger"}
 ]
 
+# Herramientas que SIEMPRE requieren confirmación (nunca auto-aprobadas)
+TOOLS_ALWAYS_CONFIRM = {"Write", "Edit", "NotebookEdit"}
+
+# Herramientas que NUNCA requieren confirmación (solo lectura)
+TOOLS_NEVER_CONFIRM = {"Read", "Glob", "Grep", "WebSearch", "WebFetch", "TodoWrite", "Task"}
+
+# Patrones de Bash auto-aprobados (de settings.local.json)
+BASH_AUTO_APPROVED_PREFIXES = [
+    "git add", "git commit", "git push", "git status", "git diff", "git log",
+    "python -c", "python -m py_compile", "python ", "timeout 5 python",
+    "pip install", "dir", "wc", "echo", "cat", "ls", "pwd", "cd"
+]
+
+
+def needs_confirmation(tool_name: str, tool_input: dict, permission_mode: str) -> bool:
+    """Determina si esta herramienta necesita confirmación del usuario."""
+    # Herramientas de solo lectura nunca necesitan confirmación
+    if tool_name in TOOLS_NEVER_CONFIRM:
+        return False
+
+    # Si permission_mode es acceptEdits, Write/Edit/NotebookEdit pasan automáticamente
+    if permission_mode == "acceptEdits" and tool_name in TOOLS_ALWAYS_CONFIRM:
+        return False
+
+    # En modo default, Write y Edit siempre necesitan confirmación
+    if tool_name in TOOLS_ALWAYS_CONFIRM:
+        return True
+
+    # Para Bash, verificar si el comando está auto-aprobado
+    if tool_name == "Bash":
+        command = tool_input.get("command", "").strip().lower()
+        for prefix in BASH_AUTO_APPROVED_PREFIXES:
+            if command.startswith(prefix.lower()):
+                return False
+        # Comando Bash no auto-aprobado = necesita confirmación
+        return True
+
+    # Por defecto, asumir que necesita confirmación
+    return True
+
 
 def build_body(tool_name: str, tool_input: dict) -> str:
     """Construye descripción legible de la operación."""
@@ -96,16 +136,38 @@ def main():
     try:
         input_data = json.load(sys.stdin)
 
+        # Log completo del input para debug
+        log_path = r"c:\Users\danig\OneDrive\Documentos\Proyectos\VoiceFlow\hook_debug.log"
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(f"\n=== Hook llamado ===\n")
+            f.write(json.dumps(input_data, indent=2, ensure_ascii=False))
+            f.write("\n")
+
         tool_name = input_data.get("tool_name", "unknown")
         tool_input = input_data.get("tool_input", {})
         session_id = input_data.get("session_id", "")
+        permission_mode = input_data.get("permission_mode", "default")
 
-        send_notification(tool_name, tool_input, session_id)
+        # Verificar si necesita confirmación
+        if not needs_confirmation(tool_name, tool_input, permission_mode):
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(f"Saltado (mode={permission_mode}): {tool_name}\n")
+            sys.exit(0)
+
+        # Log para debug
+        print(f"[Hook] Tool: {tool_name}", file=sys.stderr)
+
+        result = send_notification(tool_name, tool_input, session_id)
+        print(f"[Hook] Enviado: {result}", file=sys.stderr)
+
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(f"Notificación enviada: {result}\n")
 
         # Exit 0 = no bloquear, dejar que Claude muestre su diálogo
         sys.exit(0)
 
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        print(f"[Hook] JSON Error: {e}", file=sys.stderr)
         sys.exit(0)
     except Exception as e:
         print(f"[Hook] Error: {e}", file=sys.stderr)
