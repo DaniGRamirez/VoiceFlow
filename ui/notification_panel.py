@@ -80,6 +80,14 @@ class NotificationWidget(QFrame):
 
     # Signal: (correlation_id, action_dict)
     action_clicked = pyqtSignal(str, dict)
+    # Signal para cerrar sin ejecutar acción
+    dismiss_clicked = pyqtSignal(str)
+    # Signal para ir a VS Code
+    vscode_clicked = pyqtSignal(str)
+
+    # Referencia a los widgets de botones para poder ocultarlos
+    _action_buttons: list
+    _buttons_container: QWidget
 
     # Estilos de botón
     BUTTON_STYLES = {
@@ -132,12 +140,31 @@ class NotificationWidget(QFrame):
             QPushButton:pressed {
                 background-color: #6B2A2A;
             }
+        """,
+        "vscode": """
+            QPushButton {
+                background-color: #0078D4;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 6px 12px;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background-color: #1A8AE6;
+            }
+            QPushButton:pressed {
+                background-color: #005A9E;
+            }
         """
     }
 
     def __init__(self, notification: Notification, parent=None):
         super().__init__(parent)
         self.notification = notification
+        self._action_buttons = []
+        self._buttons_container = None
+        self._resolved_overlay = None
         self._setup_ui()
 
     def _setup_ui(self):
@@ -154,6 +181,10 @@ class NotificationWidget(QFrame):
         layout.setContentsMargins(12, 10, 12, 10)
         layout.setSpacing(6)
 
+        # Header con título y botón cerrar
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(8)
+
         # Título
         title_label = QLabel(self.notification.title)
         title_label.setStyleSheet("""
@@ -163,7 +194,29 @@ class NotificationWidget(QFrame):
             font-weight: 600;
             background: transparent;
         """)
-        layout.addWidget(title_label)
+        header_layout.addWidget(title_label)
+        header_layout.addStretch()
+
+        # Botón cerrar (×)
+        close_btn = QPushButton("×")
+        close_btn.setFixedSize(20, 20)
+        close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        close_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #888888;
+                border: none;
+                font-size: 16px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                color: #ffffff;
+            }
+        """)
+        close_btn.clicked.connect(self._on_dismiss_click)
+        header_layout.addWidget(close_btn)
+
+        layout.addLayout(header_layout)
 
         # Cuerpo (si existe)
         if self.notification.body:
@@ -177,12 +230,25 @@ class NotificationWidget(QFrame):
             body_label.setWordWrap(True)
             layout.addWidget(body_label)
 
-        # Botones de acciones
-        if self.notification.actions:
-            buttons_layout = QHBoxLayout()
-            buttons_layout.setSpacing(8)
-            buttons_layout.addStretch()
+        # Container de botones (para poder ocultarlo)
+        self._buttons_container = QWidget()
+        self._buttons_container.setStyleSheet("background: transparent;")
+        buttons_layout = QHBoxLayout(self._buttons_container)
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
+        buttons_layout.setSpacing(8)
 
+        # Botón VS Code (siempre visible, a la izquierda)
+        vscode_btn = QPushButton("VS Code")
+        vscode_btn.setStyleSheet(self.BUTTON_STYLES["vscode"])
+        vscode_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        vscode_btn.clicked.connect(self._on_vscode_click)
+        buttons_layout.addWidget(vscode_btn)
+        self._action_buttons.append(vscode_btn)
+
+        buttons_layout.addStretch()
+
+        # Botones de acciones (a la derecha)
+        if self.notification.actions:
             for action in self.notification.actions:
                 btn = QPushButton(action.label)
                 style = self.BUTTON_STYLES.get(action.style, self.BUTTON_STYLES["secondary"])
@@ -194,8 +260,9 @@ class NotificationWidget(QFrame):
                     lambda checked, a=action: self._on_action_click(a)
                 )
                 buttons_layout.addWidget(btn)
+                self._action_buttons.append(btn)
 
-            layout.addLayout(buttons_layout)
+        layout.addWidget(self._buttons_container)
 
         # Tamaño fijo
         self.setMinimumWidth(280)
@@ -210,6 +277,14 @@ class NotificationWidget(QFrame):
             "style": action.style
         }
         self.action_clicked.emit(self.notification.correlation_id, action_dict)
+
+    def _on_dismiss_click(self):
+        """Emite signal para cerrar sin ejecutar acción."""
+        self.dismiss_clicked.emit(self.notification.correlation_id)
+
+    def _on_vscode_click(self):
+        """Emite signal para ir a VS Code."""
+        self.vscode_clicked.emit(self.notification.correlation_id)
 
     def set_status(self, status: str):
         """Actualiza el estado visual de la notificación."""
@@ -240,6 +315,33 @@ class NotificationWidget(QFrame):
                 }
             """)
 
+    def mark_resolved(self):
+        """
+        Marca la notificación como resuelta visualmente.
+
+        - Oculta los botones de acción
+        - Aplica overlay verde semitransparente
+        - La notificación desaparecerá después (manejado por el panel)
+        """
+        self.notification.status = "resolved"
+
+        # Ocultar botones
+        if self._buttons_container:
+            self._buttons_container.hide()
+
+        # Aplicar estilo verde con overlay
+        self.setStyleSheet("""
+            NotificationWidget {
+                background-color: rgba(34, 139, 34, 200);
+                border: 2px solid #2E8B57;
+                border-radius: 8px;
+            }
+            QLabel {
+                color: white;
+                background: transparent;
+            }
+        """)
+
 
 class NotificationPanel(QWidget):
     """
@@ -250,11 +352,16 @@ class NotificationPanel(QWidget):
 
     # Signal: (correlation_id, action_dict)
     intent_signal = pyqtSignal(str, dict)
+    # Signal para dismiss manual (sin ejecutar acción)
+    dismiss_signal = pyqtSignal(str)
+    # Signal para ir a VS Code
+    vscode_signal = pyqtSignal(str)
 
     # Signal interno para thread-safety
     _add_notification_signal = pyqtSignal(dict)
     _remove_notification_signal = pyqtSignal(str)
     _update_status_signal = pyqtSignal(str, str)
+    _mark_resolved_signal = pyqtSignal(str, int)  # correlation_id, dismiss_delay_ms
 
     def __init__(self, overlay_widget=None, margin_top: int = 80, max_visible: int = 3):
         super().__init__(None, Qt.WindowType.FramelessWindowHint |
@@ -305,6 +412,7 @@ class NotificationPanel(QWidget):
         self._add_notification_signal.connect(self._do_add_notification)
         self._remove_notification_signal.connect(self._do_remove_notification)
         self._update_status_signal.connect(self._do_update_status)
+        self._mark_resolved_signal.connect(self._do_mark_resolved)
 
     def _update_position(self):
         """Actualiza posición del panel encima del overlay."""
@@ -347,6 +455,18 @@ class NotificationPanel(QWidget):
         """Actualiza el estado de una notificación."""
         self._update_status_signal.emit(correlation_id, status)
 
+    def mark_resolved(self, correlation_id: str, dismiss_delay_ms: int = 2000):
+        """
+        Marca una notificación como resuelta con feedback visual.
+
+        Muestra overlay verde y oculta botones, luego desaparece después del delay.
+
+        Args:
+            correlation_id: ID de la notificación
+            dismiss_delay_ms: Milisegundos antes de desaparecer (default 2000)
+        """
+        self._mark_resolved_signal.emit(correlation_id, dismiss_delay_ms)
+
     # ========== SLOTS INTERNOS ==========
 
     def _do_add_notification(self, data: dict):
@@ -360,6 +480,8 @@ class NotificationPanel(QWidget):
         # Crear widget
         widget = NotificationWidget(notification)
         widget.action_clicked.connect(self._on_action_clicked)
+        widget.dismiss_clicked.connect(self._on_dismiss_clicked)
+        widget.vscode_clicked.connect(self._on_vscode_clicked)
 
         # Añadir al layout
         self._container_layout.addWidget(widget)
@@ -409,15 +531,51 @@ class NotificationPanel(QWidget):
         if correlation_id in self._notifications:
             self._notifications[correlation_id].set_status(status)
 
+    def _do_mark_resolved(self, correlation_id: str, dismiss_delay_ms: int):
+        """Slot: marca notificación como resuelta con feedback visual."""
+        if correlation_id not in self._notifications:
+            return
+
+        widget = self._notifications[correlation_id]
+
+        # Aplicar estilo "resuelto" (verde, sin botones)
+        widget.mark_resolved()
+
+        # Ajustar tamaño del panel (los botones se ocultaron)
+        self.adjustSize()
+        self._update_position()
+
+        print(f"[NotificationPanel] Resuelto: {correlation_id[:12]}... (desaparece en {dismiss_delay_ms}ms)")
+
+        # Programar eliminación después del delay
+        QTimer.singleShot(dismiss_delay_ms, lambda: self._do_remove_notification(correlation_id))
+
     def _on_action_clicked(self, correlation_id: str, action: dict):
         """Callback cuando se hace click en una acción."""
         print(f"[NotificationPanel] Acción: {action['id']} en {correlation_id}")
 
-        # Marcar como ejecutando
-        self.update_status(correlation_id, "executing")
+        # Ocultar inmediatamente para mejor respuesta
+        self.remove_notification(correlation_id)
 
         # Emitir intent
         self.intent_signal.emit(correlation_id, action)
+
+    def _on_dismiss_clicked(self, correlation_id: str):
+        """Callback cuando se hace click en cerrar (×)."""
+        print(f"[NotificationPanel] Dismiss manual: {correlation_id}")
+
+        # Ocultar inmediatamente
+        self.remove_notification(correlation_id)
+
+        # Emitir signal de dismiss (no ejecuta ninguna acción)
+        self.dismiss_signal.emit(correlation_id)
+
+    def _on_vscode_clicked(self, correlation_id: str):
+        """Callback cuando se hace click en VS Code."""
+        print(f"[NotificationPanel] VS Code: {correlation_id}")
+
+        # NO ocultar la notificación, solo ir a VS Code
+        self.vscode_signal.emit(correlation_id)
 
     def _on_timeout(self, correlation_id: str):
         """Callback cuando expira el timeout de una notificación."""

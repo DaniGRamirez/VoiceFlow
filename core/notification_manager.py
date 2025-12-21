@@ -63,6 +63,8 @@ class NotificationManager(QObject):
         # Conectar panel si existe
         if self.panel:
             self.panel.intent_signal.connect(self._on_panel_intent)
+            self.panel.dismiss_signal.connect(self._on_panel_dismiss)
+            self.panel.vscode_signal.connect(self._on_panel_vscode)
 
     def on_notification(self, data: dict):
         """
@@ -147,8 +149,54 @@ class NotificationManager(QObject):
             "source": "overlay"
         }
 
-        # Ejecutar
-        self.on_intent(intent_data)
+        # Ejecutar (el panel ya ocultó la notificación)
+        success = self._execute_intent(intent_data)
+
+        # Actualizar estado interno
+        if correlation_id in self._notifications:
+            state = self._notifications[correlation_id]
+            state.status = "completed" if success else "failed"
+            state.executed_at = time.time()
+            state.intent = action.get("id", "unknown")
+
+        # Sonido
+        if self.sounds:
+            sound = "success" if success else "error"
+            self.sounds.play(sound)
+
+    def _on_panel_dismiss(self, correlation_id: str):
+        """
+        Callback cuando el usuario cierra manualmente una notificación.
+
+        No ejecuta ninguna acción, solo actualiza estado.
+        """
+        if correlation_id in self._notifications:
+            state = self._notifications[correlation_id]
+            state.status = "dismissed"
+            state.executed_at = time.time()
+
+        print(f"[NotificationManager] Dismiss manual: {correlation_id[:12]}...")
+
+    def _on_panel_vscode(self, correlation_id: str):
+        """
+        Callback cuando el usuario hace click en VS Code.
+
+        Enfoca VS Code sin ejecutar ninguna acción de la notificación.
+        """
+        print(f"[NotificationManager] VS Code: {correlation_id[:12]}...")
+
+        # Ejecutar acción de ir a VS Code
+        if self.execute_callback:
+            try:
+                # Usamos una acción especial para VS Code
+                action = {
+                    "id": "vscode",
+                    "hotkey": None,  # No enviar hotkey
+                    "label": "VS Code"
+                }
+                self.execute_callback(action)
+            except Exception as e:
+                print(f"[NotificationManager] Error al ir a VS Code: {e}")
 
     def _execute_intent(self, intent_data: dict) -> bool:
         """
@@ -220,11 +268,13 @@ class NotificationManager(QObject):
         if correlation_id in self._notifications:
             state = self._notifications[correlation_id]
             if state.status == "pending":
-                state.status = "dismissed"
+                state.status = "resolved"
                 state.executed_at = time.time()
 
-        # Cerrar en el panel
+        # Mostrar feedback visual "resuelto" y luego cerrar
         if self.panel:
-            self.panel.remove_notification(correlation_id)
+            # mark_resolved muestra overlay verde, oculta botones,
+            # y elimina la notificación después de 2 segundos
+            self.panel.mark_resolved(correlation_id, dismiss_delay_ms=2000)
 
-        print(f"[NotificationManager] Dismiss: {correlation_id[:12]}...")
+        print(f"[NotificationManager] Resuelto: {correlation_id[:12]}...")
