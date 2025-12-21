@@ -40,6 +40,7 @@ class Notification:
     timestamp: float = field(default_factory=time.time)
     timeout_seconds: int = 120
     status: str = "pending"  # pending, executing, completed, failed, expired
+    style: str = "default"  # default, success (verde), warning, error
 
     @classmethod
     def from_dict(cls, data: dict) -> "Notification":
@@ -71,7 +72,8 @@ class Notification:
             source=data.get("source", "claude_code"),
             timestamp=data.get("timestamp", time.time()),
             timeout_seconds=data.get("timeout_seconds", 120),
-            status=data.get("status", "pending")
+            status=data.get("status", "pending"),
+            style=data.get("style", "default")
         )
 
 
@@ -167,15 +169,43 @@ class NotificationWidget(QFrame):
         self._resolved_overlay = None
         self._setup_ui()
 
-    def _setup_ui(self):
-        """Configura la UI del widget."""
-        self.setStyleSheet("""
+    # Estilos de notificación según tipo/estilo
+    NOTIFICATION_STYLES = {
+        "default": """
             NotificationWidget {
                 background-color: rgba(25, 25, 25, 245);
                 border: 1px solid #404040;
                 border-radius: 8px;
             }
-        """)
+        """,
+        "success": """
+            NotificationWidget {
+                background-color: rgba(20, 45, 20, 245);
+                border: 1px solid #2D7D46;
+                border-radius: 8px;
+            }
+        """,
+        "warning": """
+            NotificationWidget {
+                background-color: rgba(45, 40, 20, 245);
+                border: 1px solid #8B7D3A;
+                border-radius: 8px;
+            }
+        """,
+        "error": """
+            NotificationWidget {
+                background-color: rgba(45, 20, 20, 245);
+                border: 1px solid #8B3A3A;
+                border-radius: 8px;
+            }
+        """
+    }
+
+    def _setup_ui(self):
+        """Configura la UI del widget."""
+        # Aplicar estilo según tipo de notificación
+        style_key = self.notification.style if self.notification.style in self.NOTIFICATION_STYLES else "default"
+        self.setStyleSheet(self.NOTIFICATION_STYLES[style_key])
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 10, 12, 10)
@@ -230,39 +260,43 @@ class NotificationWidget(QFrame):
             body_label.setWordWrap(True)
             layout.addWidget(body_label)
 
-        # Container de botones (para poder ocultarlo)
-        self._buttons_container = QWidget()
-        self._buttons_container.setStyleSheet("background: transparent;")
-        buttons_layout = QHBoxLayout(self._buttons_container)
-        buttons_layout.setContentsMargins(0, 0, 0, 0)
-        buttons_layout.setSpacing(8)
+        # Las notificaciones tipo "info" no muestran botones (solo cerrar)
+        is_info = self.notification.type == "info"
 
-        # Botón VS Code (siempre visible, a la izquierda)
-        vscode_btn = QPushButton("VS Code")
-        vscode_btn.setStyleSheet(self.BUTTON_STYLES["vscode"])
-        vscode_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        vscode_btn.clicked.connect(self._on_vscode_click)
-        buttons_layout.addWidget(vscode_btn)
-        self._action_buttons.append(vscode_btn)
+        if not is_info:
+            # Container de botones (para poder ocultarlo)
+            self._buttons_container = QWidget()
+            self._buttons_container.setStyleSheet("background: transparent;")
+            buttons_layout = QHBoxLayout(self._buttons_container)
+            buttons_layout.setContentsMargins(0, 0, 0, 0)
+            buttons_layout.setSpacing(8)
 
-        buttons_layout.addStretch()
+            # Botón VS Code (siempre visible, a la izquierda)
+            vscode_btn = QPushButton("VS Code")
+            vscode_btn.setStyleSheet(self.BUTTON_STYLES["vscode"])
+            vscode_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            vscode_btn.clicked.connect(self._on_vscode_click)
+            buttons_layout.addWidget(vscode_btn)
+            self._action_buttons.append(vscode_btn)
 
-        # Botones de acciones (a la derecha)
-        if self.notification.actions:
-            for action in self.notification.actions:
-                btn = QPushButton(action.label)
-                style = self.BUTTON_STYLES.get(action.style, self.BUTTON_STYLES["secondary"])
-                btn.setStyleSheet(style)
-                btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            buttons_layout.addStretch()
 
-                # Conectar click
-                btn.clicked.connect(
-                    lambda checked, a=action: self._on_action_click(a)
-                )
-                buttons_layout.addWidget(btn)
-                self._action_buttons.append(btn)
+            # Botones de acciones (a la derecha)
+            if self.notification.actions:
+                for action in self.notification.actions:
+                    btn = QPushButton(action.label)
+                    style = self.BUTTON_STYLES.get(action.style, self.BUTTON_STYLES["secondary"])
+                    btn.setStyleSheet(style)
+                    btn.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        layout.addWidget(self._buttons_container)
+                    # Conectar click
+                    btn.clicked.connect(
+                        lambda checked, a=action: self._on_action_click(a)
+                    )
+                    buttons_layout.addWidget(btn)
+                    self._action_buttons.append(btn)
+
+            layout.addWidget(self._buttons_container)
 
         # Tamaño fijo
         self.setMinimumWidth(280)

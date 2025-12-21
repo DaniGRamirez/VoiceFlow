@@ -33,6 +33,7 @@ class BrowserActionExecutor:
         self.manager = BrowserManager.get_instance()
         self.current_page = None
         self.message_count_before = 0  # Para tracking de mensajes nuevos
+        self.last_error = None  # Último error descriptivo
 
     def execute(self, actions: list, command_name: str = "browser") -> bool:
         """
@@ -70,6 +71,14 @@ class BrowserActionExecutor:
             url_contains = action.get("url_contains", "")
             self.current_page = self.manager.find_tab(url_contains)
             if not self.current_page:
+                # Mensaje de error específico según la URL buscada
+                if "chatgpt" in url_contains.lower() or "chat.openai" in url_contains.lower():
+                    self.last_error = "ChatGPT no está listo. Abre chat.openai.com en Edge."
+                elif "claude" in url_contains.lower():
+                    self.last_error = "Claude no está listo. Abre claude.ai en Edge."
+                else:
+                    self.last_error = f"No se encontró pestaña con '{url_contains}' en Edge."
+                print(f"[Browser] {self.last_error}")
                 return False
             self.current_page.bring_to_front()
             return True

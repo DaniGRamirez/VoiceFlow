@@ -22,3 +22,14 @@ config.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs and runtime data
+logs/*.json
+*.log
+
+# Test files
+test_*.txt
+
+# Node modules (claude-pty-wrapper)
+node_modules/
+claude-pty-wrapper/dist/

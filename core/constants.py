@@ -23,3 +23,18 @@ STATUS_LOG_INTERVAL = 5.0  # Segundos entre logs de status
 
 # === MISC ===
 HOTKEY_POST_DELAY = 0.2  # Delay genérico después de ejecutar hotkeys
+
+# === OVERLAY ANIMATION ===
+# Duraciones de transiciones entre estados (segundos)
+TRANSITION_COLLAPSE_DURATION = 0.1   # Colapso rapido al centro
+TRANSITION_HOLD_DURATION = 0.3       # Pausa en el centro antes de expandir
+TRANSITION_EXPAND_DURATION = 0.25    # Expansion despues del colapso
+
+# Animacion de wake-word
+WAKE_SHAKE_DURATION = 0.3  # Duracion de la sacudida al detectar wake-word
+
+# Barras (audio visualizer)
+BAR_COUNT = 11          # Numero de barras (impar para simetria)
+BAR_WIDTH = 3           # Ancho de cada barra en px
+BAR_GAP = 2             # Espacio entre barras
+BAR_CORNER_RADIUS = 1.5 # Radio de esquinas redondeadas

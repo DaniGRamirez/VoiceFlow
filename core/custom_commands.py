@@ -119,13 +119,26 @@ class CustomCommandLoader:
             actions = cmd_def["actions"]
             cmd_name = cmd_def["name"]
 
-            def make_action(acts, name):
+            def make_action(acts, name, executor):
                 """Factory para evitar problema de closure en loops."""
-                return lambda: self.executor.execute_pipeline(acts, name)
+                def action_fn():
+                    try:
+                        success = executor.execute_pipeline(acts, name)
+                        if not success and executor.overlay:
+                            executor.overlay.show_text("Error ejecutando comando", is_command=False)
+                        return success
+                    except Exception as e:
+                        error_msg = str(e)
+                        print(f"[Custom] Error en '{name}': {error_msg}")
+                        if executor.overlay:
+                            # Mostrar error en overlay
+                            executor.overlay.show_text(error_msg, is_command=False)
+                        return False
+                return action_fn
 
             cmd = Command(
                 keywords=all_keywords,
-                action=make_action(actions, cmd_name),
+                action=make_action(actions, cmd_name, self.executor),
                 allowed_states=allowed_states,
                 sound=cmd_def.get("sound")
             )

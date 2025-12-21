@@ -2769,35 +2769,655 @@
       ],
       "ignored": [],
       "active": true
+    },
+    {
+      "start": "2025-12-19T18:53:46.363269",
+      "end": "2025-12-19T18:54:46.372281",
+      "duration_seconds": 60.009016,
+      "commands": [
+        {
+          "time": "2025-12-19T18:54:03.437000",
+          "command": "opcion uno",
+          "recognized": "uno",
+          "model": "small"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-19T18:53:58.376693",
+          "text": "indica también"
+        },
+        {
+          "time": "2025-12-19T18:54:05.323493",
+          "text": "co"
+        },
+        {
+          "time": "2025-12-19T18:54:40.990262",
+          "text": "ahora"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T19:00:58.014628",
+      "end": "2025-12-19T19:01:58.017418",
+      "duration_seconds": 60.002796,
+      "commands": [
+        {
+          "time": "2025-12-19T19:01:05.369380",
+          "command": "silencio",
+          "recognized": "mute",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T19:04:49.845980",
+      "end": "2025-12-19T19:10:49.882537",
+      "duration_seconds": 360.036561,
+      "commands": [
+        {
+          "time": "2025-12-19T19:05:00.409156",
+          "command": "silencio",
+          "recognized": "mute",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-19T19:10:49.651410",
+          "text": "¿Qué?"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T19:37:51.910297",
+      "end": "2025-12-19T19:38:51.930020",
+      "duration_seconds": 60.019729,
+      "commands": [
+        {
+          "time": "2025-12-19T19:37:56.019522",
+          "command": "test",
+          "recognized": "prueba",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T19:41:03.581230",
+      "end": "2025-12-19T19:42:03.607816",
+      "duration_seconds": 60.02659,
+      "commands": [
+        {
+          "time": "2025-12-19T19:41:08.665925",
+          "command": "test",
+          "recognized": "prueba",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T19:44:51.636944",
+      "end": "2025-12-19T19:45:51.653212",
+      "duration_seconds": 60.016272,
+      "commands": [
+        {
+          "time": "2025-12-19T19:44:56.080307",
+          "command": "test",
+          "recognized": "prueba",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T19:45:29.779428",
+          "command": "test",
+          "recognized": "test terminal",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T19:45:48.541173",
+          "command": "test",
+          "recognized": "test terminal",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T19:47:42.479120",
+      "end": "2025-12-19T19:48:42.493355",
+      "duration_seconds": 60.014239,
+      "commands": [
+        {
+          "time": "2025-12-19T19:47:47.758210",
+          "command": "test",
+          "recognized": "test terminal",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T19:49:45.747682",
+      "end": "2025-12-19T19:50:45.765098",
+      "duration_seconds": 60.017421,
+      "commands": [
+        {
+          "time": "2025-12-19T19:49:47.989171",
+          "command": "casa",
+          "recognized": "casa",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T19:54:52.843895",
+      "end": "2025-12-19T19:55:52.859650",
+      "duration_seconds": 60.01576,
+      "commands": [
+        {
+          "time": "2025-12-19T19:55:01.371330",
+          "command": "test terminal",
+          "recognized": "test terminal",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T20:03:33.531807",
+      "end": "2025-12-19T20:04:33.555710",
+      "duration_seconds": 60.023907,
+      "commands": [
+        {
+          "time": "2025-12-19T20:03:43.874379",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T20:05:03.070111",
+      "end": "2025-12-19T20:06:03.087424",
+      "duration_seconds": 60.017319,
+      "commands": [
+        {
+          "time": "2025-12-19T20:05:05.765562",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T20:05:30.691570",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T22:38:32.076939",
+      "end": "2025-12-19T22:39:32.095310",
+      "duration_seconds": 60.018375,
+      "commands": [
+        {
+          "time": "2025-12-19T22:38:37.194057",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T22:49:37.416280",
+      "end": "2025-12-19T22:50:37.437931",
+      "duration_seconds": 60.021654,
+      "commands": [
+        {
+          "time": "2025-12-19T22:49:42.838893",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T22:50:05.159506",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T22:51:55.127056",
+      "end": "2025-12-19T22:52:55.140274",
+      "duration_seconds": 60.013223,
+      "commands": [
+        {
+          "time": "2025-12-19T22:51:58.598784",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T22:56:28.334929",
+      "end": "2025-12-19T22:58:28.379285",
+      "duration_seconds": 120.044361,
+      "commands": [
+        {
+          "time": "2025-12-19T22:56:32.873530",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T22:56:54.903918",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T22:57:34.969509",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T22:59:08.843525",
+      "end": "2025-12-19T23:00:08.859090",
+      "duration_seconds": 60.01557,
+      "commands": [
+        {
+          "time": "2025-12-19T22:59:12.314209",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T22:59:26.602463",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-19T23:02:29.661957",
+      "end": "2025-12-19T23:04:29.698230",
+      "duration_seconds": 120.036278,
+      "commands": [
+        {
+          "time": "2025-12-19T23:02:33.820808",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T23:03:13.330985",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T23:03:22.805243",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-19T23:03:39.412040",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-20T09:15:25.997750",
+      "end": "2025-12-20T09:17:26.035375",
+      "duration_seconds": 120.03763,
+      "commands": [
+        {
+          "time": "2025-12-20T09:15:38.609983",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-20T09:16:13.286817",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-20T09:16:29.143037",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-20T09:53:36.712169",
+      "end": "2025-12-20T09:54:36.734930",
+      "duration_seconds": 60.022766,
+      "commands": [
+        {
+          "time": "2025-12-20T09:53:41.781134",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-20T09:55:22.428063",
+      "end": "2025-12-20T11:00:22.698152",
+      "duration_seconds": 3900.270093,
+      "commands": [
+        {
+          "time": "2025-12-20T09:55:28.094929",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-20T10:45:55.263724",
+          "command": "dictado",
+          "recognized": "Dictado",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-20T10:46:07.428629",
+          "command": "enviar",
+          "recognized": "Envía",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [
+        {
+          "time": "2025-12-20T11:00:21.325012",
+          "text": "reinicir"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-20T14:09:23.155048",
+      "end": "2025-12-20T14:10:23.174025",
+      "duration_seconds": 60.018982,
+      "commands": [
+        {
+          "time": "2025-12-20T14:09:44.117206",
+          "command": "hablar",
+          "recognized": "Habla",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-20T14:09:53.921629",
+          "command": "silencio",
+          "recognized": "Calla",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-21T13:45:20.904504",
+      "end": "2025-12-21T14:22:05.549374",
+      "duration_seconds": 2204.644879,
+      "commands": [],
+      "ignored": []
+    },
+    {
+      "start": "2025-12-21T15:49:33.189174",
+      "end": "2025-12-21T15:50:33.190951",
+      "duration_seconds": 60.00178,
+      "commands": [
+        {
+          "time": "2025-12-21T15:49:46.413086",
+          "command": "test",
+          "recognized": "prueba",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-21T15:49:51.416254",
+          "command": "code",
+          "recognized": "code",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-21T15:49:56.108022",
+          "command": "code dictado",
+          "recognized": "code dictado",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-21T16:05:13.536650",
+      "end": "2025-12-21T16:06:13.549356",
+      "duration_seconds": 60.012709,
+      "commands": [],
+      "ignored": [
+        {
+          "time": "2025-12-21T16:05:16.744721",
+          "text": "no"
+        },
+        {
+          "time": "2025-12-21T16:05:20.521712",
+          "text": "no"
+        },
+        {
+          "time": "2025-12-21T16:05:27.137918",
+          "text": "no"
+        },
+        {
+          "time": "2025-12-21T16:05:28.794123",
+          "text": "no"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-21T16:11:56.014845",
+      "end": "2025-12-21T16:12:56.016185",
+      "duration_seconds": 60.001345,
+      "commands": [
+        {
+          "time": "2025-12-21T16:12:17.130642",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-21T16:13:46.260282",
+      "end": "2025-12-21T16:14:46.276084",
+      "duration_seconds": 60.015807,
+      "commands": [
+        {
+          "time": "2025-12-21T16:13:53.532860",
+          "command": "resumen",
+          "recognized": "resumen",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-21T16:14:30.400159",
+          "command": "plan",
+          "recognized": "plan",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-21T17:27:18.867803",
+      "end": "2025-12-21T17:28:18.884121",
+      "duration_seconds": 60.016321,
+      "commands": [
+        {
+          "time": "2025-12-21T17:27:27.263538",
+          "command": "test",
+          "recognized": "prueba",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-21T19:45:57.061515",
+      "end": "2025-12-21T19:48:57.065209",
+      "duration_seconds": 180.003697,
+      "commands": [],
+      "ignored": [
+        {
+          "time": "2025-12-21T19:48:42.004928",
+          "text": "Conmigo aprendes tanto conmigo"
+        }
+      ],
+      "active": true
+    },
+    {
+      "start": "2025-12-21T23:27:00.714098",
+      "end": "2025-12-22T00:06:00.741119",
+      "duration_seconds": 2340.027026,
+      "commands": [
+        {
+          "time": "2025-12-21T23:27:21.738223",
+          "command": "ayuda",
+          "recognized": "ayuda",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-22T00:05:37.914194",
+          "command": "siguiente",
+          "recognized": "skip",
+          "model": "picovoice:claudia"
+        },
+        {
+          "time": "2025-12-22T00:05:47.722763",
+          "command": "siguiente",
+          "recognized": "skip",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-22T00:08:37.323980",
+      "end": "2025-12-22T00:09:37.336068",
+      "duration_seconds": 60.012091,
+      "commands": [
+        {
+          "time": "2025-12-22T00:08:56.427057",
+          "command": "adapta",
+          "recognized": "adapta",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
+    },
+    {
+      "start": "2025-12-22T00:11:06.968995",
+      "end": "2025-12-22T00:12:06.981373",
+      "duration_seconds": 60.012381,
+      "commands": [
+        {
+          "time": "2025-12-22T00:11:26.110449",
+          "command": "adapta",
+          "recognized": "adapta",
+          "model": "picovoice:claudia"
+        }
+      ],
+      "ignored": [],
+      "active": true
     }
   ],
   "stats": {
-    "total_sessions": 44,
-    "total_commands": 260,
-    "total_ignored": 194,
+    "total_sessions": 75,
+    "total_commands": 308,
+    "total_ignored": 204,
     "command_frequency": {
-      "dictado": 77,
+      "dictado": 78,
       "enter": 45,
       "claudia": 40,
       "cancela": 31,
-      "enviar": 26,
-      "opcion uno": 10,
+      "enviar": 27,
+      "resumen": 23,
+      "opcion uno": 11,
       "listo": 9,
+      "test": 8,
       "opcion dos": 7,
-      "ayuda": 5,
+      "ayuda": 6,
+      "silencio": 3,
       "eliminar": 2,
       "seleccion": 2,
       "pausa": 2,
+      "siguiente": 2,
+      "adapta": 2,
       "opcion una": 1,
       "reanuda": 1,
       "tab": 1,
-      "abajo": 1
+      "abajo": 1,
+      "casa": 1,
+      "test terminal": 1,
+      "hablar": 1,
+      "code": 1,
+      "code dictado": 1,
+      "plan": 1
     },
     "ignored_frequency": {
       "cómo": 6,
       "vale": 4,
       "este": 4,
       "centro": 4,
+      "no": 4,
       "mercado": 3,
       "héctor": 3,
       "cancelar": 3,
@@ -2842,8 +3462,7 @@
       "hoy": 1,
       "entre": 1,
       "famosa": 1,
-      "opción": 1,
-      "broussard": 1
+      "opción": 1
     }
   }
 }

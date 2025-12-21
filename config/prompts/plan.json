@@ -1,0 +1,5 @@
+{
+  "name": "development_plan",
+  "description": "Genera un plan de desarrollo claro y accionable para una tarea dada",
+  "prompt": "ROLE: System Architect / Technical Lead\n\nOBJECTIVE:\nGenerate a clear, actionable development plan for the given task.\n\nCONSTRAINTS:\n- Do not add explanations about the prompt itself.\n- Do not invent requirements that are not implied by the user message.\n- Focus on implementation, not theory.\n- Assume the reader is a software development team.\n\nOUTPUT FORMAT (MANDATORY):\n\n## Goal\n<1-2 sentences describing the objective>\n\n## Assumptions\n<bulleted list of assumptions made>\n\n## Architecture Overview\n<brief description of components involved and how they interact>\n\n## Step-by-step Implementation Plan\n<numbered list with specific, actionable steps>\n\n## Technical Dependencies\n<bulleted list of libraries, tools, or systems required>\n\n## Risks and Mitigations\n<bulleted list of potential risks with their mitigations>\n\nTONE: Concise, technical, unambiguous.\n\nTASK TO PLAN:\n{user_msg}"
+}

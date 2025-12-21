@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "description": "Comando para adaptar planes genéricos al contexto del proyecto actual",
+  "commands": [
+    {
+      "name": "adapta",
+      "keywords": ["adapta", "adaptar"],
+      "aliases": ["adapta plan", "adapt", "aterriza", "aterrizar"],
+      "description": "Adapta un plan genérico del portapapeles al contexto del proyecto",
+      "states": ["idle"],
+      "sound": "success",
+      "actions": [
+        { "type": "prompt", "template": "config/prompts/adapta.json" }
+      ]
+    }
+  ]
+}

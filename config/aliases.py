@@ -47,9 +47,9 @@ LISTO_ALIASES = ["listo", "lista", "listos", "ok", "okay"]
 CANCELA_ALIASES = ["cancela", "cancelar", "cancelá", "cancelo", "cancelado", "stop"]
 ENVIAR_ALIASES = ["enviar", "envía", "envia", "envío", "manda", "mandar"]
 
-# Comandos principales (incluye wake-words OWW en inglés)
-CLAUDIA_ALIASES = ["claudia", "novia", "claudio", "hey jarvis", "jarvis"]
-CLAUDIA_DICTADO_ALIASES = ["claudia dictado", "claudia dictar"]
+# Comandos principales
+CODE_ALIASES = ["code", "código", "codigo", "vscode", "vs code"]
+CODE_DICTADO_ALIASES = ["code dictado", "código dictado", "codigo dictado"]
 
 # Utilidades
 ACEPTAR_ALIASES = ["aceptar"]

@@ -1,0 +1,57 @@
+{
+  "version": "1.0",
+  "description": "Comando para generar planes de desarrollo estructurados",
+  "commands": [
+    {
+      "name": "plan",
+      "keywords": ["plan"],
+      "aliases": ["planear", "planifica", "planificar", "plan de desarrollo"],
+      "description": "Genera un plan de desarrollo estructurado a partir del contenido del portapapeles",
+      "states": ["idle"],
+      "sound": "ding",
+      "actions": [
+        { "type": "prompt", "template": "config/prompts/plan.json" },
+        {
+          "type": "browser",
+          "actions": [
+            { "action": "connect" },
+            { "action": "find_tab", "url_contains": "chatgpt" },
+            { "action": "wait_for", "selector": "div[contenteditable='true']", "timeout": 5 },
+            { "action": "clear", "selector": "div[contenteditable='true']" },
+            { "action": "paste", "selector": "div[contenteditable='true']" },
+            { "action": "wait", "seconds": 0.3 },
+            { "action": "press", "key": "Enter" },
+            { "action": "focus_window", "title": "Edge" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "plan hablar",
+      "keywords": ["plan hablar", "plan voz"],
+      "aliases": ["planear y hablar", "planifica hablar", "plan hablado"],
+      "description": "Genera plan de desarrollo y activa lectura en voz alta",
+      "states": ["idle"],
+      "sound": "ding",
+      "actions": [
+        { "type": "prompt", "template": "config/prompts/plan.json" },
+        {
+          "type": "browser",
+          "actions": [
+            { "action": "connect" },
+            { "action": "find_tab", "url_contains": "chatgpt" },
+            { "action": "focus_window", "title": "Edge" },
+            { "action": "wait_for", "selector": "div[contenteditable='true']", "timeout": 5 },
+            { "action": "count_messages" },
+            { "action": "clear", "selector": "div[contenteditable='true']" },
+            { "action": "paste", "selector": "div[contenteditable='true']" },
+            { "action": "wait", "seconds": 0.3 },
+            { "action": "press", "key": "Enter" },
+            { "action": "wait_for_new_message", "timeout": 120 },
+            { "action": "click_last_menu_item", "item_text": "Leer en voz alta" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "adapta-plan",
+  "description": "Adapts a generic development plan to the current project context",
+  "format": "json",
+  "prompt": "{\n  \"role\": \"system\",\n  \"objective\": \"Adapt the provided generic development plan to a concrete, real-world project context.\",\n  \"constraints\": [\n    \"Do not rewrite the plan from scratch.\",\n    \"Preserve the original structure, ordering, and intent of the plan.\",\n    \"Only specialize, clarify, or remove steps when strictly necessary.\",\n    \"Do not add new phases or steps that are not present in the original plan.\",\n    \"Avoid abstract or high-level language; make steps concrete and actionable.\"\n  ],\n  \"adaptation_rules\": [\n    \"Interpret the plan as targeting a real, existing software project.\",\n    \"Replace generic terms with plausible concrete equivalents when appropriate.\",\n    \"If a step does not apply, mark it as 'Not applicable' and briefly explain why.\",\n    \"If assumptions are required, state them explicitly instead of inventing requirements.\"\n  ],\n  \"expected_output\": {\n    \"format\": \"structured\",\n    \"sections\": [\n      \"Adapted Plan\",\n      \"Assumptions Made\",\n      \"Non-applicable Steps\",\n      \"Open Questions (if any)\"\n    ]\n  },\n  \"tone\": \"technical, precise, implementation-oriented\",\n  \"msg_user\": \"{user_msg}\"\n}"
+}
