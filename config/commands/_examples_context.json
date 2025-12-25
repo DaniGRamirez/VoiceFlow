@@ -1,0 +1,163 @@
+{
+  "version": "1.0",
+  "description": "Ejemplos de comandos usando el sistema de contexto. Renombra este archivo (quita el _) para activarlos.",
+  "commands": [
+    {
+      "name": "copiar mayusculas",
+      "description": "Copia el texto seleccionado y lo pega en mayúsculas",
+      "keywords": ["copia mayusculas", "copiar mayusculas"],
+      "states": ["idle"],
+      "actions": [
+        {"type": "hotkey", "keys": ["ctrl", "c"]},
+        {"type": "wait", "seconds": 0.1},
+        {"type": "capture_clipboard", "output": "original"},
+        {"type": "transform", "input": "{original}", "operation": "upper", "output": "resultado"},
+        {"type": "clipboard", "text": "{resultado}"},
+        {"type": "hotkey", "keys": ["ctrl", "v"]}
+      ]
+    },
+    {
+      "name": "copiar minusculas",
+      "description": "Copia el texto seleccionado y lo pega en minúsculas",
+      "keywords": ["copia minusculas", "copiar minusculas"],
+      "states": ["idle"],
+      "actions": [
+        {"type": "hotkey", "keys": ["ctrl", "c"]},
+        {"type": "wait", "seconds": 0.1},
+        {"type": "capture_clipboard", "output": "original"},
+        {"type": "transform", "input": "{original}", "operation": "lower", "output": "resultado"},
+        {"type": "clipboard", "text": "{resultado}"},
+        {"type": "hotkey", "keys": ["ctrl", "v"]}
+      ]
+    },
+    {
+      "name": "invertir texto",
+      "description": "Copia el texto seleccionado y lo pega invertido",
+      "keywords": ["invertir texto", "invierte texto"],
+      "states": ["idle"],
+      "actions": [
+        {"type": "hotkey", "keys": ["ctrl", "c"]},
+        {"type": "wait", "seconds": 0.1},
+        {"type": "capture_clipboard", "output": "original"},
+        {"type": "transform", "input": "{original}", "operation": "reverse", "output": "invertido"},
+        {"type": "clipboard", "text": "{invertido}"},
+        {"type": "hotkey", "keys": ["ctrl", "v"]}
+      ]
+    },
+    {
+      "name": "contar palabras",
+      "description": "Cuenta las palabras del texto seleccionado",
+      "keywords": ["contar palabras", "cuenta palabras"],
+      "states": ["idle"],
+      "actions": [
+        {"type": "hotkey", "keys": ["ctrl", "c"]},
+        {"type": "wait", "seconds": 0.1},
+        {"type": "capture_clipboard", "output": "texto"},
+        {"type": "transform", "input": "{texto}", "operation": "words", "output": "count"},
+        {"type": "notify", "text": "Palabras: {count}"},
+        {"type": "sound", "name": "ding"}
+      ]
+    },
+    {
+      "name": "envolver comillas",
+      "description": "Envuelve el texto seleccionado en comillas",
+      "keywords": ["envolver comillas", "poner comillas"],
+      "states": ["idle"],
+      "actions": [
+        {"type": "hotkey", "keys": ["ctrl", "c"]},
+        {"type": "wait", "seconds": 0.1},
+        {"type": "capture_clipboard", "output": "original"},
+        {"type": "transform", "input": "{original}", "operation": "prefix:\"", "output": "temp"},
+        {"type": "transform", "input": "{temp}", "operation": "suffix:\"", "output": "resultado"},
+        {"type": "clipboard", "text": "{resultado}"},
+        {"type": "hotkey", "keys": ["ctrl", "v"]}
+      ]
+    },
+    {
+      "name": "limpiar espacios",
+      "description": "Quita espacios extra del texto seleccionado",
+      "keywords": ["limpiar espacios", "quitar espacios"],
+      "states": ["idle"],
+      "actions": [
+        {"type": "hotkey", "keys": ["ctrl", "c"]},
+        {"type": "wait", "seconds": 0.1},
+        {"type": "capture_clipboard", "output": "original"},
+        {"type": "transform", "input": "{original}", "operation": "trim", "output": "limpio"},
+        {"type": "clipboard", "text": "{limpio}"},
+        {"type": "hotkey", "keys": ["ctrl", "v"]}
+      ]
+    },
+    {
+      "name": "extraer numeros",
+      "description": "Extrae solo los números del texto seleccionado",
+      "keywords": ["extraer numeros", "solo numeros"],
+      "states": ["idle"],
+      "actions": [
+        {"type": "hotkey", "keys": ["ctrl", "c"]},
+        {"type": "wait", "seconds": 0.1},
+        {"type": "capture_clipboard", "output": "original"},
+        {"type": "transform", "input": "{original}", "operation": "regex:[^0-9]:", "output": "numeros"},
+        {"type": "clipboard", "text": "{numeros}"},
+        {"type": "hotkey", "keys": ["ctrl", "v"]}
+      ]
+    },
+    {
+      "name": "fecha actual",
+      "description": "Escribe la fecha actual",
+      "keywords": ["fecha actual", "insertar fecha"],
+      "states": ["idle"],
+      "actions": [
+        {"type": "type", "text": "{date}"}
+      ]
+    },
+    {
+      "name": "hora actual",
+      "description": "Escribe la hora actual",
+      "keywords": ["hora actual", "insertar hora"],
+      "states": ["idle"],
+      "actions": [
+        {"type": "type", "text": "{time}"}
+      ]
+    },
+    {
+      "name": "titulo texto",
+      "description": "Convierte texto a formato título (Primera Letra Mayúscula)",
+      "keywords": ["titulo texto", "capitalizar"],
+      "states": ["idle"],
+      "actions": [
+        {"type": "hotkey", "keys": ["ctrl", "c"]},
+        {"type": "wait", "seconds": 0.1},
+        {"type": "capture_clipboard", "output": "original"},
+        {"type": "transform", "input": "{original}", "operation": "title", "output": "titulo"},
+        {"type": "clipboard", "text": "{titulo}"},
+        {"type": "hotkey", "keys": ["ctrl", "v"]}
+      ]
+    },
+    {
+      "name": "condicional ejemplo",
+      "description": "Ejemplo de comando con condición: si hay texto copiado lo transforma, si no muestra mensaje",
+      "keywords": ["ejemplo condicional"],
+      "states": ["idle"],
+      "actions": [
+        {"type": "hotkey", "keys": ["ctrl", "c"]},
+        {"type": "wait", "seconds": 0.1},
+        {"type": "capture_clipboard", "output": "texto"},
+        {
+          "type": "condition",
+          "if": "{texto}",
+          "not_empty": true,
+          "then": [
+            {"type": "transform", "input": "{texto}", "operation": "upper", "output": "resultado"},
+            {"type": "clipboard", "text": "{resultado}"},
+            {"type": "hotkey", "keys": ["ctrl", "v"]},
+            {"type": "sound", "name": "success"}
+          ],
+          "else": [
+            {"type": "notify", "text": "No hay texto seleccionado"},
+            {"type": "sound", "name": "error"}
+          ]
+        }
+      ]
+    }
+  ]
+}

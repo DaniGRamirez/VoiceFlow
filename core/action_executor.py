@@ -2,17 +2,19 @@
 ActionExecutor - Ejecuta pipelines de acciones declarativas.
 
 Convierte definiciones JSON en acciones reales usando pyautogui, subprocess, etc.
-Soporta interpolación de variables y permisos para acciones peligrosas.
+Soporta interpolación de variables, permisos para acciones peligrosas,
+y un sistema de contexto para comunicación entre acciones en un pipeline.
 """
 
 import json
 import os
+import re
 import shlex
 import subprocess
 import time
 import webbrowser
 from datetime import datetime, date
-from typing import Optional, Callable
+from typing import Optional, Callable, Any
 
 import pyautogui
 import pyperclip
@@ -42,13 +44,32 @@ class ActionExecutor:
 
     Acciones Tier 1 (seguras):
         key, hotkey, type, wait, open, clipboard, sound, notify
+        set, transform, condition (nuevas acciones de contexto)
 
     Acciones Tier 2 (requieren permiso):
         shell, run, script
+
+    Sistema de Contexto:
+        Las acciones pueden comunicarse a través de un contexto compartido.
+        - Cualquier acción puede leer variables con {variable_name}
+        - Acciones con "output" guardan su resultado en el contexto
+        - Variables predefinidas: clipboard, date, time, timestamp
     """
 
     # Acciones que requieren permiso especial
     DANGEROUS_ACTIONS = {"shell", "run", "script"}
+
+    # Operaciones disponibles para transform
+    TRANSFORM_OPERATIONS = {
+        "upper": lambda s: s.upper(),
+        "lower": lambda s: s.lower(),
+        "trim": lambda s: s.strip(),
+        "title": lambda s: s.title(),
+        "reverse": lambda s: s[::-1],
+        "length": lambda s: str(len(s)),
+        "lines": lambda s: str(s.count('\n') + 1),
+        "words": lambda s: str(len(s.split())),
+    }
 
     def __init__(self, allow_dangerous: bool = False,
                  sound_player: Optional[Callable] = None,
@@ -63,22 +84,39 @@ class ActionExecutor:
         self.sound_player = sound_player
         self.overlay = overlay
 
-    def execute_pipeline(self, actions: list, command_name: str = "custom") -> bool:
+    def execute_pipeline(self, actions: list, command_name: str = "custom",
+                         initial_context: Optional[dict] = None) -> bool:
         """
-        Ejecuta lista de acciones en orden.
+        Ejecuta lista de acciones en orden con contexto compartido.
 
         Args:
             actions: Lista de dicts con definición de acciones
             command_name: Nombre del comando (para logs)
+            initial_context: Contexto inicial opcional (para tests o encadenamiento)
 
         Returns:
             True si todas las acciones se ejecutaron OK
         """
+        # Inicializar contexto con variables predefinidas
+        context = self._create_initial_context(initial_context)
+
         for i, action in enumerate(actions):
             action_type = action.get("type", "unknown")
             try:
                 print(f"[Custom] {command_name} - paso {i+1}: {action_type}")
-                self._execute_one(action)
+
+                # Interpolar variables del contexto
+                interpolated_action = self._interpolate_vars(action, context)
+
+                # Ejecutar acción y obtener resultado
+                result = self._execute_one(interpolated_action, context)
+
+                # Si la acción define "output", guardar resultado en contexto
+                output_var = action.get("output")
+                if output_var and result is not None:
+                    context[output_var] = str(result)
+                    print(f"[Context] {output_var} = {str(result)[:50]}...")
+
             except PermissionError as e:
                 print(f"[Custom] PERMISO DENEGADO en paso {i+1}: {e}")
                 return False
@@ -90,8 +128,33 @@ class ActionExecutor:
                 return False
         return True
 
-    def _execute_one(self, action: dict):
-        """Ejecuta una sola acción."""
+    def _create_initial_context(self, initial: Optional[dict] = None) -> dict:
+        """Crea el contexto inicial con variables predefinidas."""
+        context = {
+            "clipboard": pyperclip.paste() or "",
+            "date": date.today().isoformat(),
+            "time": datetime.now().strftime("%H:%M"),
+            "timestamp": datetime.now().strftime("%Y%m%d_%H%M%S"),
+        }
+        if initial:
+            context.update(initial)
+        return context
+
+    def get_context(self) -> dict:
+        """Retorna una copia del contexto actual (para debugging)."""
+        return self._create_initial_context()
+
+    def _execute_one(self, action: dict, context: dict) -> Optional[Any]:
+        """
+        Ejecuta una sola acción.
+
+        Args:
+            action: Definición de la acción (ya interpolada)
+            context: Contexto compartido del pipeline
+
+        Returns:
+            Resultado de la acción (para guardar en context si hay "output")
+        """
         action_type = action.get("type")
 
         # Verificar permisos para acciones peligrosas
@@ -100,11 +163,37 @@ class ActionExecutor:
                 f"Acción '{action_type}' requiere allow_dangerous_actions=true en config"
             )
 
-        # Interpolar variables en campos de texto
-        action = self._interpolate_vars(action)
+        # ========== NUEVAS ACCIONES DE CONTEXTO ==========
 
-        # Ejecutar según tipo
-        if action_type == "key":
+        if action_type == "set":
+            # Guardar valor en contexto
+            var_name = action.get("var")
+            value = action.get("value", "")
+            if var_name:
+                context[var_name] = value
+            return value
+
+        elif action_type == "transform":
+            # Transformar texto
+            return self._execute_transform(action, context)
+
+        elif action_type == "condition":
+            # Ejecución condicional
+            return self._execute_condition(action, context)
+
+        elif action_type == "capture_clipboard":
+            # Capturar clipboard actual (útil después de Ctrl+C)
+            return pyperclip.paste() or ""
+
+        elif action_type == "log":
+            # Debug: mostrar valor en consola
+            message = action.get("message", "")
+            print(f"[Log] {message}")
+            return message
+
+        # ========== ACCIONES EXISTENTES ==========
+
+        elif action_type == "key":
             pyautogui.press(action["key"])
 
         elif action_type == "hotkey":
@@ -272,25 +361,153 @@ class ActionExecutor:
         else:
             raise ValueError(f"Acción desconocida: {action_type}")
 
-    def _interpolate_vars(self, action: dict) -> dict:
+        return None  # Acciones sin output explícito
+
+    def _interpolate_vars(self, action: dict, context: dict) -> dict:
         """
-        Reemplaza variables en campos de texto.
+        Reemplaza variables en campos de texto usando el contexto.
 
         Variables soportadas:
-            {clipboard} - Contenido del portapapeles
-            {date} - Fecha actual (YYYY-MM-DD)
-            {time} - Hora actual (HH:MM)
+            {variable_name} - Cualquier variable del contexto
+            Variables predefinidas: clipboard, date, time, timestamp
         """
-        variables = {
-            "clipboard": pyperclip.paste() or "",
-            "date": date.today().isoformat(),
-            "time": datetime.now().strftime("%H:%M"),
-        }
-
         result = action.copy()
         for key, value in result.items():
             if isinstance(value, str):
-                for var_name, var_value in variables.items():
+                # Reemplazar todas las variables del contexto
+                for var_name, var_value in context.items():
                     value = value.replace(f"{{{var_name}}}", str(var_value))
                 result[key] = value
+            elif isinstance(value, list):
+                # También interpolar en listas (para "keys" en hotkey, etc.)
+                result[key] = [
+                    self._interpolate_string(item, context) if isinstance(item, str) else item
+                    for item in value
+                ]
         return result
+
+    def _interpolate_string(self, text: str, context: dict) -> str:
+        """Interpola variables en un string individual."""
+        for var_name, var_value in context.items():
+            text = text.replace(f"{{{var_name}}}", str(var_value))
+        return text
+
+    def _execute_transform(self, action: dict, context: dict) -> str:
+        """
+        Ejecuta una transformación de texto.
+
+        Soporta:
+            - Operaciones simples: upper, lower, trim, title, reverse, length
+            - Operaciones con parámetros: replace:old:new, prefix:text, suffix:text
+            - Operaciones regex: regex:pattern:replacement
+        """
+        input_text = action.get("input", "")
+        operation = action.get("operation", "")
+
+        # Operaciones simples (sin parámetros)
+        if operation in self.TRANSFORM_OPERATIONS:
+            return self.TRANSFORM_OPERATIONS[operation](input_text)
+
+        # Operaciones con parámetros (formato: operation:param1:param2)
+        if ":" in operation:
+            parts = operation.split(":", 2)
+            op_name = parts[0]
+
+            if op_name == "replace" and len(parts) >= 3:
+                old_text = parts[1]
+                new_text = parts[2] if len(parts) > 2 else ""
+                return input_text.replace(old_text, new_text)
+
+            elif op_name == "prefix" and len(parts) >= 2:
+                return parts[1] + input_text
+
+            elif op_name == "suffix" and len(parts) >= 2:
+                return input_text + parts[1]
+
+            elif op_name == "slice" and len(parts) >= 2:
+                # slice:start:end (como Python slicing)
+                try:
+                    start = int(parts[1]) if parts[1] else None
+                    end = int(parts[2]) if len(parts) > 2 and parts[2] else None
+                    return input_text[start:end]
+                except ValueError:
+                    return input_text
+
+            elif op_name == "regex" and len(parts) >= 3:
+                # regex:pattern:replacement
+                pattern = parts[1]
+                replacement = parts[2]
+                try:
+                    return re.sub(pattern, replacement, input_text)
+                except re.error as e:
+                    print(f"[Transform] Error en regex: {e}")
+                    return input_text
+
+            elif op_name == "split" and len(parts) >= 2:
+                # split:delimiter:index - dividir y tomar elemento
+                delimiter = parts[1]
+                index = int(parts[2]) if len(parts) > 2 else 0
+                split_parts = input_text.split(delimiter)
+                if 0 <= index < len(split_parts):
+                    return split_parts[index]
+                return ""
+
+            elif op_name == "join" and len(parts) >= 2:
+                # join:delimiter - unir líneas con delimiter
+                delimiter = parts[1]
+                lines = input_text.splitlines()
+                return delimiter.join(lines)
+
+        print(f"[Transform] Operación desconocida: {operation}")
+        return input_text
+
+    def _execute_condition(self, action: dict, context: dict) -> Optional[str]:
+        """
+        Ejecuta acciones condicionales.
+
+        Formato:
+            {
+                "type": "condition",
+                "if": "{variable}",           # Variable a evaluar
+                "equals": "valor",            # Comparar con valor (opcional)
+                "contains": "texto",          # Contiene texto (opcional)
+                "not_empty": true,            # No está vacío (opcional)
+                "then": [...acciones...],     # Si cumple condición
+                "else": [...acciones...]      # Si no cumple (opcional)
+            }
+        """
+        var_value = action.get("if", "")
+
+        # Evaluar condición
+        condition_met = False
+
+        if "equals" in action:
+            condition_met = var_value == action["equals"]
+        elif "contains" in action:
+            condition_met = action["contains"] in var_value
+        elif "not_empty" in action:
+            condition_met = bool(var_value.strip()) == action["not_empty"]
+        elif "starts_with" in action:
+            condition_met = var_value.startswith(action["starts_with"])
+        elif "ends_with" in action:
+            condition_met = var_value.endswith(action["ends_with"])
+        else:
+            # Por defecto, evaluar como booleano (truthy/falsy)
+            condition_met = bool(var_value.strip())
+
+        # Ejecutar rama correspondiente
+        if condition_met:
+            actions_to_run = action.get("then", [])
+        else:
+            actions_to_run = action.get("else", [])
+
+        if actions_to_run:
+            # Ejecutar sub-pipeline
+            for sub_action in actions_to_run:
+                interpolated = self._interpolate_vars(sub_action, context)
+                result = self._execute_one(interpolated, context)
+                output_var = sub_action.get("output")
+                if output_var and result is not None:
+                    context[output_var] = str(result)
+
+        return str(condition_met).lower()  # "true" o "false"
