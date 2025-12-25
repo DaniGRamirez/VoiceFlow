@@ -23,6 +23,10 @@ DEDUP_MAX_ENTRIES = 50  # Máximo de entries en el cache de dedup
 # solo mostrar 1 y auto-aceptar las demás cuando se acepta la primera
 BURST_WINDOW_MS = 1000  # 1 segundo
 
+# Límites para cleanup automático
+MAX_NOTIFICATIONS = 100  # Máximo de notificaciones en memoria
+CLEANUP_AGE_SECONDS = 3600  # Eliminar notificaciones mayores a 1 hora
+
 
 @dataclass
 class NotificationState:
@@ -224,6 +228,9 @@ class NotificationManager(QObject):
 
         # Enviar push notification si está configurado
         self._send_push_notification(data)
+
+        # Cleanup periódico de notificaciones antiguas
+        self._cleanup_old_notifications()
 
         print(f"[NotificationManager] Nueva: {data.get('title', 'Sin título')}")
         return True  # Notificación aceptada
@@ -475,3 +482,43 @@ class NotificationManager(QObject):
             self.panel.mark_resolved(correlation_id, dismiss_delay_ms=2000)
 
         print(f"[NotificationManager] Resuelto: {correlation_id[:12]}...")
+
+    def _cleanup_old_notifications(self):
+        """
+        Elimina notificaciones antiguas para evitar memory leaks.
+
+        Se ejecuta automáticamente después de cada nueva notificación.
+        """
+        now = time.time()
+
+        # Si no hay demasiadas, no hacer nada
+        if len(self._notifications) <= MAX_NOTIFICATIONS:
+            return
+
+        # Ordenar por created_at (más viejas primero)
+        sorted_items = sorted(
+            self._notifications.items(),
+            key=lambda x: x[1].created_at
+        )
+
+        # Calcular cuántas eliminar
+        to_remove = len(self._notifications) - MAX_NOTIFICATIONS
+        removed = 0
+
+        for cid, state in sorted_items:
+            if removed >= to_remove:
+                break
+
+            # Solo eliminar si no está pendiente o si es muy antigua
+            age = now - state.created_at
+            if state.status != "pending" or age > CLEANUP_AGE_SECONDS:
+                del self._notifications[cid]
+
+                # Limpiar también del cache de dedup
+                if state.dedup_key and state.dedup_key in self._dedup_cache:
+                    del self._dedup_cache[state.dedup_key]
+
+                removed += 1
+
+        if removed > 0:
+            print(f"[NotificationManager] Cleanup: {removed} notificaciones antiguas eliminadas")

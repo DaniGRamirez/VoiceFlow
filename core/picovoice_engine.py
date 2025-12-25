@@ -184,6 +184,61 @@ class PicovoiceHybridEngine:
         # Recorder (se crea en start())
         self._recorder = None
 
+        # Configuración de reconexión
+        self._max_reconnect_attempts = 3
+        self._reconnect_delay = 1.0  # segundos entre intentos
+
+    def _reconnect_recorder(self) -> bool:
+        """Intenta reconectar el grabador de audio.
+
+        Returns:
+            True si se reconectó exitosamente, False si falló.
+        """
+        print("[Picovoice] Intentando reconectar micrófono...")
+
+        # Limpiar recorder existente
+        if self._recorder:
+            try:
+                self._recorder.stop()
+                self._recorder.delete()
+            except Exception:
+                pass
+            self._recorder = None
+
+        # Intentar reconectar
+        for attempt in range(self._max_reconnect_attempts):
+            try:
+                time.sleep(self._reconnect_delay)
+                self._recorder = PvRecorder(
+                    device_index=-1,
+                    frame_length=self._frame_length
+                )
+                self._recorder.start()
+                print(f"[Picovoice] Micrófono reconectado (intento {attempt + 1})")
+                return True
+            except Exception as e:
+                print(f"[Picovoice] Reconexión fallida (intento {attempt + 1}/{self._max_reconnect_attempts}): {e}")
+
+        print("[Picovoice] No se pudo reconectar el micrófono")
+        return False
+
+    def _safe_read(self):
+        """Lee frame de audio con manejo de errores y reconexión.
+
+        Returns:
+            Frame de audio o None si falla después de reintentos.
+        """
+        try:
+            return self._recorder.read()
+        except Exception as e:
+            print(f"[Picovoice] Error leyendo audio: {e}")
+            if self._reconnect_recorder():
+                try:
+                    return self._recorder.read()
+                except Exception as e2:
+                    print(f"[Picovoice] Error después de reconexión: {e2}")
+            return None
+
     def _set_state(self, new_state: str):
         """Cambia el estado interno y notifica."""
         if self._state != new_state:
@@ -284,8 +339,13 @@ class PicovoiceHybridEngine:
 
         try:
             while self._running:
-                # Leer frame de audio
-                pcm = self._recorder.read()
+                # Leer frame de audio con reconexión automática
+                pcm = self._safe_read()
+                if pcm is None:
+                    # Error irrecuperable, esperar antes de reintentar
+                    time.sleep(1.0)
+                    continue
+
                 self._frame_count += 1
 
                 # Calcular nivel de mic para overlay

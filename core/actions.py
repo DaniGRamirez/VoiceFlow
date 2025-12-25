@@ -8,6 +8,10 @@ import time
 import pyautogui
 import pyperclip
 
+# Configuración de pyautogui para estabilidad
+pyautogui.PAUSE = 0.1  # Pausa entre acciones (100ms)
+pyautogui.FAILSAFE = True  # Mover mouse a esquina aborta (seguridad)
+
 # Importar aliases para limpiar comandos del texto dictado
 from config.aliases import (
     LISTO_ALIASES, CANCELA_ALIASES, ENVIAR_ALIASES, AYUDA_ALIASES
