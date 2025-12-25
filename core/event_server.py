@@ -115,6 +115,20 @@ if FASTAPI_AVAILABLE:
         tailscale_enabled: bool = False
         uptime_seconds: float = 0
 
+    class ComponentHealth(BaseModel):
+        """Estado de un componente."""
+        status: str = "running"
+        details: Optional[str] = None
+
+    class DeepHealthResponse(BaseModel):
+        """Response del health check detallado."""
+        status: str = "healthy"
+        service: str = "VoiceFlow"
+        uptime_seconds: float = 0
+        notifications_pending: int = 0
+        memory_mb: float = 0
+        components: Dict[str, str] = {}
+
     class PingResponse(BaseModel):
         """Response del ping (latencia)."""
         pong: bool = True
@@ -351,6 +365,44 @@ class EventServer:
                 service="VoiceFlow",
                 tailscale_enabled=self._tailscale_enabled,
                 uptime_seconds=time.time() - self._start_time
+            )
+
+        @app.get("/health/deep", response_model=DeepHealthResponse)
+        async def deep_health_check(request: Request, _: bool = Depends(verify_auth)):
+            """Health check detallado con estado de componentes (requiere auth)."""
+            # Contar notificaciones pendientes
+            pending_count = sum(
+                1 for n in self._notifications.values()
+                if n.get("status") == "pending"
+            )
+
+            # Obtener uso de memoria
+            memory_mb = 0.0
+            try:
+                import psutil
+                process = psutil.Process()
+                memory_mb = round(process.memory_info().rss / 1024 / 1024, 2)
+            except ImportError:
+                pass  # psutil no instalado
+            except Exception:
+                pass
+
+            # Estado de componentes
+            components = {
+                "event_server": "running",
+                "rate_limiter": "active" if self._rate_limiter else "disabled",
+            }
+
+            if self._tailscale_enabled:
+                components["tailscale"] = "enabled"
+
+            return DeepHealthResponse(
+                status="healthy",
+                service="VoiceFlow",
+                uptime_seconds=round(time.time() - self._start_time, 2),
+                notifications_pending=pending_count,
+                memory_mb=memory_mb,
+                components=components
             )
 
         @app.get("/ping", response_model=PingResponse)

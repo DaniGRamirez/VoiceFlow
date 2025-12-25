@@ -176,3 +176,69 @@ def _deep_merge(base: dict, override: dict):
             _deep_merge(base[key], value)
         else:
             base[key] = value
+
+
+def validate_config(config: dict) -> list:
+    """
+    Valida la configuración y retorna lista de errores/warnings.
+
+    Returns:
+        Lista de strings con errores encontrados (vacía si todo OK)
+    """
+    errors = []
+    warnings = []
+
+    # Validar Picovoice
+    engine = config.get("engine", "vosk")
+    if engine == "picovoice":
+        pv_config = config.get("picovoice", {})
+        if not pv_config.get("access_key"):
+            errors.append("Picovoice access_key requerida (engine=picovoice)")
+
+        keyword_path = pv_config.get("keyword_path", "")
+        if keyword_path:
+            full_path = os.path.join(BASE_DIR, keyword_path) if not os.path.isabs(keyword_path) else keyword_path
+            if not os.path.exists(full_path):
+                errors.append(f"Archivo wake-word no encontrado: {keyword_path}")
+
+    # Validar Tailscale
+    tailscale_config = config.get("tailscale", {})
+    if tailscale_config.get("enabled", False):
+        if not tailscale_config.get("bearer_token"):
+            errors.append("Tailscale bearer_token requerido si tailscale.enabled=true")
+
+    # Validar Pushover
+    pushover_config = config.get("pushover", {})
+    if pushover_config.get("enabled", False):
+        if not pushover_config.get("user_key"):
+            errors.append("Pushover user_key requerido si pushover.enabled=true")
+        if not pushover_config.get("api_token"):
+            errors.append("Pushover api_token requerido si pushover.enabled=true")
+
+    # Validar overlay position
+    overlay_config = config.get("overlay", {})
+    position = overlay_config.get("position", [100, 100])
+    if not isinstance(position, list) or len(position) != 2:
+        warnings.append("overlay.position debe ser [x, y]")
+
+    return errors
+
+
+def print_config_validation(config: dict):
+    """
+    Valida config e imprime errores/warnings.
+
+    Returns:
+        True si la configuración es válida, False si hay errores críticos
+    """
+    errors = validate_config(config)
+
+    if errors:
+        print("=" * 50)
+        print("ERRORES DE CONFIGURACIÓN:")
+        for error in errors:
+            print(f"  ❌ {error}")
+        print("=" * 50)
+        return False
+
+    return True

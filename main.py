@@ -52,7 +52,7 @@ def main():
     from core.state import State
     from core.commands import CommandRegistry
     from core.logger import get_logger
-    from config.settings import load_config
+    from config.settings import load_config, print_config_validation
 
     # Parse arguments
     args = parse_args()
@@ -60,6 +60,11 @@ def main():
 
     # Load config
     config = load_config()
+
+    # Validate config on startup
+    if not print_config_validation(config):
+        print("[Main] Configuración inválida. Revisa los errores arriba.")
+        sys.exit(1)
 
     # Get engine and dictation settings
     engine_type = get_engine_type(args)
