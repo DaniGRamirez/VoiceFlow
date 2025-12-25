@@ -35,6 +35,12 @@ Picovoice Engine → CaptureOverlay → CommandRegistry → Actions
 
 ```
 main.py (entry point)
+    ├── cli.py                                 # Argument parsing
+    ├── bootstrap.py                           # Component initialization
+    │   ├── create_core_components()           # State, Overlay, Sounds, Actions
+    │   ├── create_notification_system()       # Panel, Manager, Server
+    │   └── create_engine()                    # Picovoice/Vosk engine
+    ├── commands_builtin.py                    # Command registration
     ├── StateMachine (core/state.py)           # IDLE, DICTATING, PAUSED
     ├── CommandRegistry (core/commands.py)     # Dispatch commands by state
     ├── Actions (core/actions.py)              # pyautogui automation
@@ -43,9 +49,9 @@ main.py (entry point)
     │   ├── OverlayAnimator                    # Transitions
     │   └── OverlayDebug                       # Keyboard controls
     ├── NotificationPanel (ui/)                # Claude Code notifications
-    ├── EventServer (core/event_server.py)     # FastAPI HTTP server
+    ├── EventServer (core/event_server.py)     # FastAPI HTTP server (with rate limiting)
     ├── NotificationManager (core/)            # Orchestrates notifications
-    └── PicovoiceEngine (core/)                # Wake-word detection
+    └── PicovoiceEngine (core/)                # Wake-word detection (with auto-reconnect)
 ```
 
 ### State Machine
@@ -67,7 +73,7 @@ All visual transitions follow: **collapse → hold → expand**
 
 ### Command System
 
-Commands are registered in `main.py`:
+Commands are registered in `commands_builtin.py`:
 
 ```python
 registry.register(Command(
@@ -82,7 +88,7 @@ registry.register(Command(
 **Adding a new command:**
 1. Define aliases in `config/aliases.py`
 2. Create handler in `core/actions.py`
-3. Register in `main.py`
+3. Register in `commands_builtin.py`
 
 ### Custom Commands (JSON)
 
@@ -120,6 +126,8 @@ Claude Code Hook → POST /api/notification → NotificationPanel → User click
 - `POST /api/accept` - Accept/Enter shortcut
 - `POST /api/reject` - Reject/Escape shortcut
 - `POST /api/command` - Execute voice command via HTTP
+- `GET /health` - Basic health check
+- `GET /health/deep` - Detailed health with memory/components (requires auth)
 
 ### Remote Control (Tailscale)
 
@@ -135,13 +143,27 @@ Monitors Claude Code transcript files to auto-dismiss notifications when tools c
 
 ## Configuration
 
+### Environment Variables (Recommended for secrets)
+
+Create a `.env` file (see `.env.example`):
+
+```env
+PICOVOICE_ACCESS_KEY=your_picovoice_access_key
+VOICEFLOW_BEARER_TOKEN=your_secure_bearer_token
+PUSHOVER_USER_KEY=your_pushover_user_key
+PUSHOVER_API_TOKEN=your_pushover_api_token
+```
+
+Environment variables override `config.json` values.
+
+### config.json
+
 `config.json` (created automatically):
 
 ```json
 {
   "engine": "picovoice",
   "picovoice": {
-    "access_key": "...",           // From console.picovoice.ai
     "sensitivity": 0.7,
     "command_window": 5.0
   },
@@ -151,13 +173,10 @@ Monitors Claude Code transcript files to auto-dismiss notifications when tools c
   },
   "tailscale": {
     "enabled": false,
-    "bearer_token": "secret",
     "bind_address": "0.0.0.0"
   },
   "pushover": {
-    "enabled": false,
-    "user_key": "...",
-    "api_token": "..."
+    "enabled": false
   }
 }
 ```
@@ -193,13 +212,18 @@ Analyze `ignored` entries to find common misrecognitions and add aliases.
 
 | File | Purpose |
 |------|---------|
-| `main.py` | Entry point, command registration, component wiring |
+| `main.py` | Entry point, orchestrates startup and UI loop |
+| `cli.py` | CLI argument parsing (argparse) |
+| `bootstrap.py` | Component initialization and wiring |
+| `commands_builtin.py` | Built-in command registration |
 | `core/picovoice_engine.py` | Wake-word detection + Win+H capture |
 | `core/commands.py` | CommandRegistry, Command class, chain matching |
 | `core/actions.py` | All automation actions (pyautogui) |
 | `core/action_executor.py` | Executes JSON action pipelines |
-| `core/event_server.py` | FastAPI server for notifications |
+| `core/event_server.py` | FastAPI server for notifications (with rate limiting) |
 | `core/notification_manager.py` | Orchestrates notification lifecycle |
 | `ui/overlay.py` | Main visual overlay widget |
 | `ui/capture_overlay.py` | Text field for Win+H capture |
 | `config/aliases.py` | All command synonyms |
+| `config/settings.py` | Config loading with env var support and validation |
+| `tests/` | pytest test suite |

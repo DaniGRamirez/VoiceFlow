@@ -54,8 +54,16 @@ voiceflow/
 
 1. Crea una cuenta en [console.picovoice.ai](https://console.picovoice.ai/)
 2. Copia tu Access Key
-3. Edita `config.json` y pega tu key:
+3. Crea un archivo `.env` (recomendado) o edita `config.json`:
 
+**Opción A - Variables de entorno (recomendado):**
+```bash
+cp .env.example .env
+# Edita .env y pega tu key:
+PICOVOICE_ACCESS_KEY=TU-API-KEY-AQUI
+```
+
+**Opción B - config.json:**
 ```json
 {
   "picovoice": {
@@ -255,6 +263,14 @@ VoiceFlow guarda estadísticas en `logs/usage.json`:
 - Comandos ejecutados
 - Textos no reconocidos (útil para añadir aliases)
 - Duración de sesiones
+
+## Tests
+
+```bash
+pytest                    # Ejecutar todos los tests
+pytest tests/ -v          # Con output detallado
+pytest tests/test_commands.py  # Solo tests de comandos
+```
 
 ## Licencia
 
