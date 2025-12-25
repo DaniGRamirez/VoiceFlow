@@ -40,6 +40,7 @@ def main():
         create_core_components,
         create_notification_system,
         start_transcript_watcher,
+        start_command_watcher,
         launch_browser_if_configured,
         create_engine,
         print_startup_info
@@ -47,7 +48,8 @@ def main():
     from commands_builtin import (
         register_builtin_commands,
         load_custom_commands,
-        setup_hint_callbacks
+        setup_hint_callbacks,
+        set_command_watcher
     )
     from core.state import State
     from core.commands import CommandRegistry
@@ -99,6 +101,11 @@ def main():
 
     # Load custom commands
     load_custom_commands(registry, config, sounds, overlay)
+
+    # Start command watcher for hot reload
+    command_watcher = start_command_watcher(registry, config, sounds, overlay)
+    if command_watcher:
+        set_command_watcher(command_watcher)
 
     # Configure HTTP command endpoint
     if event_server:
@@ -251,6 +258,12 @@ def main():
             actions.release_keys()
         except Exception as e:
             print(f"[Main] Error liberando teclas: {e}")
+
+        try:
+            if command_watcher:
+                command_watcher.stop()
+        except Exception as e:
+            print(f"[Main] Error deteniendo command watcher: {e}")
 
         try:
             if engine:

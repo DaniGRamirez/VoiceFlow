@@ -71,11 +71,26 @@ class CustomCommandLoader:
         Returns:
             Lista de objetos Command listos para registrar
         """
+        commands, _, _ = self.load_all_validated()
+        return commands
+
+    def load_all_validated(self) -> tuple[list, list[str], list[str]]:
+        """
+        Carga y valida todos los archivos JSON de la carpeta.
+
+        Returns:
+            Tuple of (commands, errors, files_processed)
+            - commands: List of Command objects
+            - errors: List of error messages (file or command level)
+            - files_processed: List of file paths that were processed
+        """
         self._loaded_commands = []
+        errors: list[str] = []
+        files_processed: list[str] = []
 
         if not os.path.exists(self.commands_dir):
-            print(f"[Custom] Carpeta no encontrada: {self.commands_dir}")
-            return []
+            errors.append(f"Carpeta no encontrada: {self.commands_dir}")
+            return [], errors, []
 
         json_files = glob.glob(os.path.join(self.commands_dir, "*.json"))
 
@@ -83,13 +98,20 @@ class CustomCommandLoader:
         json_files = [f for f in json_files if not os.path.basename(f).startswith("_")]
 
         for filepath in json_files:
+            files_processed.append(filepath)
             try:
                 commands = self._load_file(filepath)
                 self._loaded_commands.extend(commands)
+            except json.JSONDecodeError as e:
+                error_msg = f"{os.path.basename(filepath)}: JSON inválido - {e}"
+                errors.append(error_msg)
+                print(f"[Custom] {error_msg}")
             except Exception as e:
+                error_msg = f"{os.path.basename(filepath)}: {e}"
+                errors.append(error_msg)
                 print(f"[Custom] Error cargando {filepath}: {e}")
 
-        return self._loaded_commands
+        return self._loaded_commands, errors, files_processed
 
     def _load_file(self, filepath: str) -> list:
         """Carga un archivo JSON y retorna lista de Commands."""

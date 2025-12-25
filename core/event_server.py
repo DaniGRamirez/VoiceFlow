@@ -148,6 +148,14 @@ if FASTAPI_AVAILABLE:
         stats: MetricsStats
         recent: List[dict] = []
 
+    class CommandReloadResponse(BaseModel):
+        """Response del reload de comandos."""
+        success: bool
+        commands_loaded: int = 0
+        commands_removed: int = 0
+        errors: List[str] = []
+        files_processed: List[str] = []
+
 
 class EventServer:
     """
@@ -791,6 +799,46 @@ class EventServer:
             print(f"[EventServer] Dismiss: {correlation_id[:12]}...")
             return {"success": True, "message": "Notificación eliminada"}
 
+        @app.post("/api/commands/reload", response_model=CommandReloadResponse)
+        async def reload_commands(request: Request, _: bool = Depends(verify_auth)):
+            """
+            Reload custom commands from JSON files.
+
+            Requires authentication if Tailscale is enabled.
+            """
+            start_time = time.time()
+
+            # Get command watcher from commands_builtin
+            try:
+                from commands_builtin import get_command_watcher
+                watcher = get_command_watcher()
+            except ImportError:
+                watcher = None
+
+            if not watcher:
+                self._log_metric(request, 501, (time.time() - start_time) * 1000)
+                raise HTTPException(
+                    status_code=501,
+                    detail="Hot reload not available. Command watcher not initialized."
+                )
+
+            try:
+                result = watcher.reload()
+                latency = (time.time() - start_time) * 1000
+                self._log_metric(request, 200, latency)
+
+                return CommandReloadResponse(
+                    success=result.success,
+                    commands_loaded=result.commands_loaded,
+                    commands_removed=result.commands_removed,
+                    errors=result.errors,
+                    files_processed=[os.path.basename(f) for f in result.files_processed]
+                )
+            except Exception as e:
+                self._log_metric(request, 500, (time.time() - start_time) * 1000)
+                print(f"[EventServer] Error reloading commands: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
+
         @app.get("/")
         async def root():
             """Endpoint raíz para verificar que el servidor está activo."""
@@ -804,6 +852,7 @@ class EventServer:
                 "POST /api/accept          - Aceptar/Enter global (Shortcut)",
                 "POST /api/reject          - Rechazar/Escape global (Shortcut)",
                 "POST /api/command         - Ejecutar comando de voz (requiere auth)",
+                "POST /api/commands/reload - Recargar comandos custom (requiere auth)",
                 "GET  /api/notifications   - Listar notificaciones",
                 "DELETE /api/notification/{id} - Eliminar notificación"
             ]

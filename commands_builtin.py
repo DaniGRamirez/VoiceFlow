@@ -17,8 +17,22 @@ from config.aliases import (
     DICTADO_ALIASES, LISTO_ALIASES, CANCELA_ALIASES, ENVIAR_ALIASES,
     CODE_ALIASES, CODE_DICTADO_ALIASES,
     ACEPTAR_ALIASES, REPETIR_ALIASES, AYUDA_ALIASES,
-    PAUSA_ALIASES, REANUDA_ALIASES, REINICIAR_ALIASES
+    PAUSA_ALIASES, REANUDA_ALIASES, REINICIAR_ALIASES, RECARGAR_ALIASES
 )
+
+# Global reference to command watcher (set by main.py)
+_command_watcher = None
+
+
+def set_command_watcher(watcher):
+    """Set the global command watcher reference."""
+    global _command_watcher
+    _command_watcher = watcher
+
+
+def get_command_watcher():
+    """Get the global command watcher reference."""
+    return _command_watcher
 
 
 def register_builtin_commands(
@@ -266,6 +280,25 @@ def register_builtin_commands(
         action=actions.on_reiniciar,
         allowed_states=[State.IDLE, State.PAUSED],
         sound="ding"
+    ))
+
+    # Reload commands
+    def do_reload():
+        watcher = get_command_watcher()
+        if watcher:
+            result = watcher.reload()
+            if result.success:
+                overlay.show_text(f"Recargados {result.commands_loaded} comandos", is_command=True)
+            else:
+                overlay.show_text(f"Error: {result.errors[0] if result.errors else 'unknown'}", is_command=False)
+        else:
+            overlay.show_text("Hot reload no disponible", is_command=False)
+
+    registry.register(Command(
+        keywords=RECARGAR_ALIASES,
+        action=do_reload,
+        allowed_states=[State.IDLE],
+        sound=None  # Sound handled by watcher
     ))
 
     # Numeric options

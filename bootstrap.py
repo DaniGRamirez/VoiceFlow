@@ -9,6 +9,11 @@ from typing import Optional, Callable
 
 from config.settings import load_config, BASE_DIR
 
+# Type aliases for optional imports
+SoundPlayer = Optional[object]
+Overlay = Optional[object]
+CommandWatcher = Optional[object]
+
 
 @dataclass
 class AppComponents:
@@ -22,6 +27,7 @@ class AppComponents:
     notification_panel: Optional["NotificationPanel"] = None
     notification_manager: Optional["NotificationManager"] = None
     event_server: Optional["EventServer"] = None
+    command_watcher: Optional["CommandWatcher"] = None
     engine: Optional[object] = None
     logger: Optional["UsageLogger"] = None
 
@@ -202,6 +208,66 @@ def start_transcript_watcher(config: dict, notification_manager: "NotificationMa
 
     except Exception as e:
         print(f"[Watcher] Error inicializando: {e}")
+
+
+def start_command_watcher(
+    registry: "CommandRegistry",
+    config: dict,
+    sounds: Optional["SoundPlayer"] = None,
+    overlay: Optional["Overlay"] = None
+) -> Optional["CommandWatcher"]:
+    """
+    Start the custom command file watcher if enabled.
+
+    Returns:
+        CommandWatcher instance or None if disabled/failed
+    """
+    custom_config = config.get("custom_commands", {})
+
+    if not custom_config.get("enabled", True):
+        return None
+
+    hot_reload_config = custom_config.get("hot_reload", {})
+    if not hot_reload_config.get("enabled", True):
+        print("[CommandWatcher] Hot reload deshabilitado en config")
+        return None
+
+    try:
+        from core.command_watcher import CommandWatcher
+        from core.custom_commands import CustomCommandLoader
+
+        commands_dir = os.path.join(BASE_DIR, "config", "commands")
+
+        # Create loader factory
+        def create_loader():
+            return CustomCommandLoader(
+                commands_dir=commands_dir,
+                allow_dangerous=custom_config.get("allow_dangerous_actions", False),
+                sound_player=sounds,
+                overlay=overlay
+            )
+
+        watcher = CommandWatcher(
+            commands_dir=commands_dir,
+            registry=registry,
+            loader_factory=create_loader,
+            config=config,
+            sounds=sounds,
+            overlay=overlay,
+            debounce_seconds=hot_reload_config.get("debounce_seconds", 0.5)
+        )
+
+        if watcher.start():
+            return watcher
+        else:
+            return None
+
+    except ImportError as e:
+        print(f"[CommandWatcher] No disponible: {e}")
+        return None
+    except Exception as e:
+        print(f"[CommandWatcher] Error inicializando: {e}")
+        return None
 
 
 def launch_browser_if_configured(config: dict):

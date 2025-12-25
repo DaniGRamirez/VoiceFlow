@@ -62,3 +62,4 @@ REANUDA_ALIASES = ["reanuda", "reanudar", "continua", "continuar"]
 
 # Sistema
 REINICIAR_ALIASES = ["reiniciar", "reinicia", "restart"]
+RECARGAR_ALIASES = ["recargar comandos", "reload commands", "actualizar comandos", "recargar"]
