@@ -1,6 +1,11 @@
 import json
 import os
 
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+load_dotenv()
+
 # Directorio base del proyecto
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -110,7 +115,14 @@ DEFAULT_CONFIG = {
 
 
 def load_config(config_path: str = "config.json") -> dict:
-    """Carga configuracion desde archivo, usa defaults si no existe"""
+    """Carga configuracion desde archivo, usa defaults si no existe.
+
+    Las variables de entorno tienen prioridad sobre config.json para secrets:
+    - PICOVOICE_ACCESS_KEY
+    - VOICEFLOW_BEARER_TOKEN
+    - PUSHOVER_USER_KEY
+    - PUSHOVER_API_TOKEN
+    """
     config = DEFAULT_CONFIG.copy()
 
     if os.path.exists(config_path):
@@ -122,7 +134,30 @@ def load_config(config_path: str = "config.json") -> dict:
         except (json.JSONDecodeError, IOError) as e:
             print(f"Error loading config: {e}")
 
+    # Override secrets con variables de entorno (tienen prioridad)
+    _apply_env_overrides(config)
+
     return config
+
+
+def _apply_env_overrides(config: dict):
+    """Aplica variables de entorno sobre la configuración.
+
+    Esto permite mantener secrets fuera del config.json.
+    """
+    # Picovoice
+    if os.environ.get("PICOVOICE_ACCESS_KEY"):
+        config["picovoice"]["access_key"] = os.environ["PICOVOICE_ACCESS_KEY"]
+
+    # Tailscale bearer token
+    if os.environ.get("VOICEFLOW_BEARER_TOKEN"):
+        config["tailscale"]["bearer_token"] = os.environ["VOICEFLOW_BEARER_TOKEN"]
+
+    # Pushover
+    if os.environ.get("PUSHOVER_USER_KEY"):
+        config["pushover"]["user_key"] = os.environ["PUSHOVER_USER_KEY"]
+    if os.environ.get("PUSHOVER_API_TOKEN"):
+        config["pushover"]["api_token"] = os.environ["PUSHOVER_API_TOKEN"]
 
 
 def save_config(config: dict, config_path: str = "config.json"):

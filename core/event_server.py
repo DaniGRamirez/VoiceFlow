@@ -26,6 +26,46 @@ except ImportError:
 _tailscale_logger = logging.getLogger("voiceflow.tailscale")
 
 
+# ========== RATE LIMITING ==========
+
+class RateLimiter:
+    """Rate limiter simple basado en ventana de tiempo."""
+
+    def __init__(self, max_requests: int = 60, window_seconds: int = 60):
+        self.max_requests = max_requests
+        self.window = window_seconds
+        self._requests: Dict[str, List[float]] = {}
+
+    def is_allowed(self, client_ip: str) -> bool:
+        """Verifica si el cliente puede hacer más requests."""
+        now = time.time()
+
+        # Limpiar requests viejos
+        if client_ip in self._requests:
+            self._requests[client_ip] = [
+                t for t in self._requests[client_ip]
+                if now - t < self.window
+            ]
+        else:
+            self._requests[client_ip] = []
+
+        # Verificar límite
+        if len(self._requests[client_ip]) >= self.max_requests:
+            return False
+
+        # Registrar request
+        self._requests[client_ip].append(now)
+        return True
+
+    def get_remaining(self, client_ip: str) -> int:
+        """Retorna requests restantes para el cliente."""
+        if client_ip not in self._requests:
+            return self.max_requests
+        now = time.time()
+        valid = [t for t in self._requests[client_ip] if now - t < self.window]
+        return max(0, self.max_requests - len(valid))
+
+
 # ========== MODELOS ==========
 
 if FASTAPI_AVAILABLE:
@@ -136,6 +176,9 @@ class EventServer:
         self._thread: Optional[threading.Thread] = None
         self._running = False
 
+        # Rate limiter (60 requests/minuto por IP)
+        self._rate_limiter = RateLimiter(max_requests=60, window_seconds=60)
+
         # Configuración Tailscale
         self._tailscale = tailscale_config or {}
         self._tailscale_enabled = self._tailscale.get("enabled", False)
@@ -156,6 +199,14 @@ class EventServer:
         ):
             # Obtener IP remota
             client_ip = request.client.host if request.client else "unknown"
+
+            # Rate limiting (aplica a todos)
+            if not self._rate_limiter.is_allowed(client_ip):
+                self._log_metric(request, 429, 0)
+                raise HTTPException(
+                    status_code=429,
+                    detail="Too many requests. Limit: 60/minute"
+                )
 
             # Localhost siempre permitido sin auth
             if client_ip in ("127.0.0.1", "localhost", "::1"):
