@@ -1,30 +1,59 @@
-"""ElevenLabs TTS — cloud neural voice synthesis."""
+"""ElevenLabs TTS — cloud neural voice synthesis via REST API.
+
+Uses the REST API directly instead of the SDK to avoid pydantic/Python 3.14 issues.
+Free tier: 10k credits/month. Free users must use their own cloned voices or
+the default voice IDs that come with the account.
+"""
 from __future__ import annotations
 
 import os
+import subprocess
 import tempfile
+import urllib.request
+import urllib.error
+import json
+
 from voiceflow.tts.base import TTSEngine
+
+# Default voice IDs available on all accounts (including free)
+DEFAULT_VOICES = {
+    "aria": "9BWtsMINqrJLrRacOk9x",
+    "roger": "CwhRBWXzGAHq8TQ4Fs17",
+    "sarah": "EXAVITQu4vr4xnSDxMaL",
+    "laura": "FGY2WhTYpPnrIDTdsKH5",
+    "charlie": "IKne3meq5aSn9XLyUdCD",
+    "george": "JBFqnCBsd6RMkjVDRZzb",
+    "callum": "N2lVS1w4EtoT3dr4eOWO",
+    "river": "SAz9YHcvj6GT2YYXdXww",
+    "liam": "TX3LPaxmHKxFdv7VOQHJ",
+    "charlotte": "XB0fDUnXU5powFXDhCwa",
+    "alice": "Xb7hH8MSUJpSbSDYk0k2",
+    "matilda": "XrExE9yKIg1WjnnlVkGX",
+    "will": "bIHbv24MWmeRgasZH58o",
+    "jessica": "cgSgspJ2msm6clMCkdW9",
+    "eric": "cjVigY5qzO86Huf0OWal",
+    "chris": "iP95p4xoKVk53GoZ742B",
+    "brian": "nPczCjzI2devNBz1zQrb",
+    "daniel": "onwK4e9ZLuTAKqWW03F9",
+    "lily": "pFZP5JQG7iQjIQuC4Bku",
+    "bill": "pqHfZKP75CvOlQylNhV4",
+}
+
+API_BASE = "https://api.elevenlabs.io/v1"
 
 
 class ElevenLabsEngine(TTSEngine):
-    """Cloud TTS using ElevenLabs API.
+    """Cloud TTS using ElevenLabs REST API.
 
-    Requires: pip install elevenlabs
-    Requires: ELEVENLABS_API_KEY env var or api_key in config
-
-    Free tier: 10k credits/month.
+    No SDK dependency — uses urllib directly.
     """
 
-    def __init__(self, voice: str = "Rachel", api_key: str | None = None):
+    def __init__(self, voice: str = "aria", api_key: str | None = None):
         self._voice = voice
         self._api_key = api_key
-        self._client = None
         self._stop_requested = False
 
     def initialize(self) -> None:
-        """Initialize ElevenLabs client."""
-        from elevenlabs.client import ElevenLabs
-
         if not self._api_key:
             self._api_key = os.environ.get("ELEVENLABS_API_KEY")
         if not self._api_key:
@@ -33,43 +62,50 @@ class ElevenLabsEngine(TTSEngine):
                 "Configura tts.api_key en ~/.voiceflow/config.yaml "
                 "o exporta ELEVENLABS_API_KEY"
             )
-
-        self._client = ElevenLabs(api_key=self._api_key)
-        print(f"[ElevenLabs] Cliente inicializado (voice={self._voice})")
+        print(f"[ElevenLabs] Inicializado (voice={self._voice})")
 
     def speak(self, text: str) -> None:
-        """Generate audio via API and play it."""
-        if not self._client:
+        if not self._api_key:
             self.initialize()
 
         self._stop_requested = False
+        voice_id = self._resolve_voice_id()
 
-        # Generate audio
-        audio_generator = self._client.text_to_speech.convert(
-            text=text,
-            voice_id=self._resolve_voice_id(),
-            model_id="eleven_multilingual_v2",
-            output_format="mp3_44100_128",
-        )
+        # Call ElevenLabs TTS API
+        url = f"{API_BASE}/text-to-speech/{voice_id}"
+        payload = json.dumps({
+            "text": text,
+            "model_id": "eleven_flash_v2_5",
+        }).encode("utf-8")
 
-        # Collect audio bytes
-        audio_bytes = b""
-        for chunk in audio_generator:
-            if self._stop_requested:
-                return
-            audio_bytes += chunk
+        headers = {
+            "xi-api-key": self._api_key,
+            "Content-Type": "application/json",
+            "Accept": "audio/mpeg",
+        }
 
-        if self._stop_requested:
+        req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+
+        try:
+            with urllib.request.urlopen(req, timeout=20) as response:
+                audio_bytes = response.read()
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="replace")
+            print(f"[ElevenLabs] Error API ({e.code}): {body}")
+            return
+        except Exception as e:
+            print(f"[ElevenLabs] Error: {e}")
             return
 
-        # Write to temp file and play
+        if self._stop_requested or not audio_bytes:
+            return
+
+        # Write to temp mp3 and play via PowerShell MediaPlayer
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
             f.write(audio_bytes)
             tmp_path = f.name
 
         try:
-            # Use PowerShell MediaPlayer for mp3 playback
-            import subprocess
             if not self._stop_requested:
                 subprocess.run(
                     [
@@ -92,42 +128,9 @@ class ElevenLabsEngine(TTSEngine):
                 pass
 
     def _resolve_voice_id(self) -> str:
-        """Resolve voice name to voice ID. Uses name as ID if it looks like one."""
-        # Common voice name → ID mapping
-        known_voices = {
-            "rachel": "21m00Tcm4TlvDq8ikWAM",
-            "drew": "29vD33N1CtxCmqQRPOHJ",
-            "clyde": "2EiwWnXFnvU5JabPnv8n",
-            "paul": "5Q0t7uMcjvnagumLfvZi",
-            "domi": "AZnzlk1XvdvUeBnXmlld",
-            "dave": "CYw3kZ02Hs0563khs1Fj",
-            "fin": "D38z5RcWu1voky8WS1ja",
-            "sarah": "EXAVITQu4vr4xnSDxMaL",
-            "antoni": "ErXwobaYiN019PkySvjV",
-            "thomas": "GBv7mTt0atIp3Br8iCZE",
-            "charlie": "IKne3meq5aSn9XLyUdCD",
-            "emily": "LcfcDJNUP1GQjkzn1xUU",
-            "elli": "MF3mGyEYCl7XYWbV9V6O",
-            "callum": "N2lVS1w4EtoT3dr4eOWO",
-            "patrick": "ODq5zmih8GrVes37Dizd",
-            "harry": "SOYHLrjzK2X1ezoPC6cr",
-            "liam": "TX3LPaxmHKxFdv7VOQHJ",
-            "dorothy": "ThT5KcBeYPX3keUQqHPh",
-            "josh": "TxGEqnHWrfWFTfGW9XjX",
-            "arnold": "VR6AewLTigWG4xSOukaG",
-            "charlotte": "XB0fDUnXU5powFXDhCwa",
-            "matilda": "XrExE9yKIg1WjnnlVkGX",
-            "james": "ZQe5CZNOzWyzPSCn5a3c",
-            "jessica": "cgSgspJ2msm6clMCkdW9",
-            "lily": "pFZP5JQG7iQjIQuC4Bku",
-            "michael": "flq6f7yk4E4fJM5XTYuZ",
-        }
-
         voice_lower = self._voice.lower()
-        if voice_lower in known_voices:
-            return known_voices[voice_lower]
-
-        # Assume it's already a voice ID
+        if voice_lower in DEFAULT_VOICES:
+            return DEFAULT_VOICES[voice_lower]
         return self._voice
 
     def stop(self) -> None:
@@ -135,4 +138,3 @@ class ElevenLabsEngine(TTSEngine):
 
     def shutdown(self) -> None:
         self.stop()
-        self._client = None
