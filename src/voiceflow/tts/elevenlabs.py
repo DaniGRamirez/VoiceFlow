@@ -1,13 +1,13 @@
 """ElevenLabs TTS — cloud neural voice synthesis via REST API.
 
 Uses the REST API directly instead of the SDK to avoid pydantic/Python 3.14 issues.
-Free tier: 10k credits/month. Free users must use their own cloned voices or
-the default voice IDs that come with the account.
+Playback via Windows MCI API (native MP3 support, no ffmpeg needed).
+Free tier: 10k credits/month with premade voices.
 """
 from __future__ import annotations
 
+import ctypes
 import os
-import subprocess
 import tempfile
 import urllib.request
 import urllib.error
@@ -15,7 +15,7 @@ import json
 
 from voiceflow.tts.base import TTSEngine
 
-# Default voice IDs available on all accounts (including free)
+# Premade voice IDs available on free tier accounts
 DEFAULT_VOICES = {
     "aria": "9BWtsMINqrJLrRacOk9x",
     "roger": "CwhRBWXzGAHq8TQ4Fs17",
@@ -37,20 +37,27 @@ DEFAULT_VOICES = {
     "daniel": "onwK4e9ZLuTAKqWW03F9",
     "lily": "pFZP5JQG7iQjIQuC4Bku",
     "bill": "pqHfZKP75CvOlQylNhV4",
+    "bella": "hpp4J3VqNfWAUOO0d1Us",
+    "adam": "pNInz6obpgDQGcFmaJgB",
 }
 
 API_BASE = "https://api.elevenlabs.io/v1"
 
 
 class ElevenLabsEngine(TTSEngine):
-    """Cloud TTS using ElevenLabs REST API.
+    """Cloud TTS using ElevenLabs REST API + Windows MCI playback."""
 
-    No SDK dependency — uses urllib directly.
-    """
-
-    def __init__(self, voice: str = "aria", api_key: str | None = None):
+    def __init__(
+        self,
+        voice: str = "sarah",
+        api_key: str | None = None,
+        speed: float = 1.0,
+        model: str = "eleven_flash_v2_5",
+    ):
         self._voice = voice
         self._api_key = api_key
+        self._speed = min(max(speed, 0.7), 1.2)  # ElevenLabs range: 0.7-1.2
+        self._model = model
         self._stop_requested = False
 
     def initialize(self) -> None:
@@ -62,7 +69,7 @@ class ElevenLabsEngine(TTSEngine):
                 "Configura tts.api_key en ~/.voiceflow/config.yaml "
                 "o exporta ELEVENLABS_API_KEY"
             )
-        print(f"[ElevenLabs] Inicializado (voice={self._voice})")
+        print(f"[ElevenLabs] Inicializado (voice={self._voice}, speed={self._speed}, model={self._model})")
 
     def speak(self, text: str) -> None:
         if not self._api_key:
@@ -75,7 +82,8 @@ class ElevenLabsEngine(TTSEngine):
         url = f"{API_BASE}/text-to-speech/{voice_id}"
         payload = json.dumps({
             "text": text,
-            "model_id": "eleven_flash_v2_5",
+            "model_id": self._model,
+            "speed": self._speed,
         }).encode("utf-8")
 
         headers = {
@@ -100,27 +108,14 @@ class ElevenLabsEngine(TTSEngine):
         if self._stop_requested or not audio_bytes:
             return
 
-        # Write to temp mp3 and play via PowerShell MediaPlayer
+        # Write to temp mp3
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
             f.write(audio_bytes)
             tmp_path = f.name
 
         try:
             if not self._stop_requested:
-                subprocess.run(
-                    [
-                        "powershell", "-NoProfile", "-Command",
-                        f"Add-Type -AssemblyName PresentationCore; "
-                        f"$p = New-Object System.Windows.Media.MediaPlayer; "
-                        f"$p.Open([Uri]'{tmp_path}'); "
-                        f"$p.Play(); "
-                        f"Start-Sleep -Milliseconds 500; "
-                        f"while($p.Position -lt $p.NaturalDuration.TimeSpan) {{ Start-Sleep -Milliseconds 100 }}; "
-                        f"$p.Close()"
-                    ],
-                    capture_output=True,
-                    timeout=30,
-                )
+                _mci_play_sync(tmp_path)
         finally:
             try:
                 os.unlink(tmp_path)
@@ -135,6 +130,27 @@ class ElevenLabsEngine(TTSEngine):
 
     def stop(self) -> None:
         self._stop_requested = True
+        _mci_stop()
 
     def shutdown(self) -> None:
         self.stop()
+
+
+def _mci_play_sync(path: str) -> None:
+    """Play audio file synchronously using Windows MCI API. Supports MP3, WAV, etc."""
+    winmm = ctypes.windll.winmm
+    buf = ctypes.create_unicode_buffer(255)
+    winmm.mciSendStringW(f'open "{path}" type mpegvideo alias el_tts', buf, 254, 0)
+    winmm.mciSendStringW("play el_tts wait", buf, 254, 0)
+    winmm.mciSendStringW("close el_tts", buf, 254, 0)
+
+
+def _mci_stop() -> None:
+    """Stop any playing MCI audio."""
+    try:
+        winmm = ctypes.windll.winmm
+        buf = ctypes.create_unicode_buffer(255)
+        winmm.mciSendStringW("stop el_tts", buf, 254, 0)
+        winmm.mciSendStringW("close el_tts", buf, 254, 0)
+    except Exception:
+        pass

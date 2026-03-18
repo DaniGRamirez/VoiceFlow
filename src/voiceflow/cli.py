@@ -47,8 +47,9 @@ def _instantiate_engine(name: str, tts_config: dict) -> TTSEngine:
     elif name == "elevenlabs":
         from voiceflow.tts.elevenlabs import ElevenLabsEngine
         return ElevenLabsEngine(
-            voice=tts_config.get("voice", "Rachel"),
+            voice=tts_config.get("voice", "bella"),
             api_key=tts_config.get("api_key") or os.environ.get("ELEVENLABS_API_KEY"),
+            speed=tts_config.get("speed", 1.2),
         )
     else:
         raise ValueError(f"TTS engine desconocido: {name}. Disponibles: sapi, kokoro, elevenlabs")
