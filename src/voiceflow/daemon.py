@@ -4,11 +4,14 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import threading
 from typing import Any, Set
 
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler, FileModifiedEvent
 from websockets.asyncio.server import ServerConnection, serve
 
-from voiceflow.config import load_config
+from voiceflow.config import VF_HOME, load_config
 from voiceflow.protocol import (
     AckResponse,
     InterruptMessage,
@@ -28,6 +31,26 @@ from voiceflow.queue import SpeechQueue
 from voiceflow.tts.base import TTSEngine
 
 logger = logging.getLogger("voiceflow.daemon")
+
+
+class _ConfigWatcher(FileSystemEventHandler):
+    """Watches config.yaml and calls back on changes with debounce."""
+
+    def __init__(self, callback, debounce: float = 0.5):
+        self._callback = callback
+        self._debounce = debounce
+        self._timer: threading.Timer | None = None
+
+    def on_modified(self, event):
+        if not isinstance(event, FileModifiedEvent):
+            return
+        if not event.src_path.replace("\\", "/").endswith("config.yaml"):
+            return
+        # Debounce — editors often write multiple times
+        if self._timer:
+            self._timer.cancel()
+        self._timer = threading.Timer(self._debounce, self._callback)
+        self._timer.start()
 
 
 class VoiceFlowDaemon:
@@ -66,16 +89,55 @@ class VoiceFlowDaemon:
         return self._port
 
     async def start(self) -> None:
-        """Start WebSocket server and speech loop."""
+        """Start WebSocket server, config watcher, and speech loop."""
         self._tts.initialize()
         self._event_loop = asyncio.get_running_loop()
         server_ctx = serve(self._handle_client, self._host, self._port)
         self._server = await server_ctx.__aenter__()
         self._speak_task = asyncio.create_task(self._speech_loop())
+        self._start_config_watcher()
         logger.info(f"VoiceFlow daemon started on ws://{self._host}:{self.port}")
+
+    def _start_config_watcher(self) -> None:
+        """Watch ~/.voiceflow/config.yaml for changes and hot-reload TTS settings."""
+        handler = _ConfigWatcher(self._on_config_changed)
+        self._observer = Observer()
+        self._observer.schedule(handler, str(VF_HOME), recursive=False)
+        self._observer.daemon = True
+        self._observer.start()
+        logger.info(f"[ConfigWatcher] Monitoring {VF_HOME / 'config.yaml'}")
+
+    def _on_config_changed(self) -> None:
+        """Called from watcher thread when config.yaml changes."""
+        try:
+            new_config = load_config()
+            tts_cfg = new_config.get("tts", {})
+            self._apply_tts_config(tts_cfg)
+            self._config = new_config
+        except Exception as e:
+            logger.error(f"[ConfigWatcher] Error reloading config: {e}")
+
+    def _apply_tts_config(self, tts_cfg: dict) -> None:
+        """Apply TTS config changes to the running engine."""
+        changed = []
+        new_voice = tts_cfg.get("voice")
+        new_speed = tts_cfg.get("speed")
+
+        if new_voice and hasattr(self._tts, "_voice") and self._tts._voice != new_voice:
+            self._tts._voice = new_voice
+            changed.append(f"voice={new_voice}")
+
+        if new_speed is not None and hasattr(self._tts, "_speed") and self._tts._speed != new_speed:
+            self._tts._speed = new_speed
+            changed.append(f"speed={new_speed}")
+
+        if changed:
+            logger.info(f"[ConfigWatcher] TTS updated: {', '.join(changed)}")
 
     async def stop(self) -> None:
         """Stop daemon."""
+        if hasattr(self, "_observer"):
+            self._observer.stop()
         if self._speak_task:
             self._speak_task.cancel()
             try:
@@ -155,6 +217,7 @@ class VoiceFlowDaemon:
 
         elif isinstance(msg, UnmuteMessage):
             self._muted = False
+
 
     async def _speech_loop(self) -> None:
         """Background loop that processes the queue and speaks."""
