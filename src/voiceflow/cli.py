@@ -119,13 +119,51 @@ def _run_full(daemon, config, debug_mode, remove_pid):
         remove_pid()
 
 
+def _resolve_project_dir(vf_config) -> str:
+    """Find the VoiceFlow project directory (where main.py, bootstrap.py etc. live).
+
+    Checks in order:
+    1. project_dir in ~/.voiceflow/config.yaml
+    2. VF_PROJECT_DIR env var
+    3. Current working directory (if it has main.py)
+    """
+    # Config
+    project_dir = vf_config.get("project_dir")
+    if project_dir and os.path.isfile(os.path.join(project_dir, "main.py")):
+        return project_dir
+
+    # Env var
+    env_dir = os.environ.get("VF_PROJECT_DIR")
+    if env_dir and os.path.isfile(os.path.join(env_dir, "main.py")):
+        return env_dir
+
+    # CWD
+    if os.path.isfile(os.path.join(os.getcwd(), "main.py")):
+        return os.getcwd()
+
+    raise RuntimeError(
+        "No se encontró el directorio del proyecto VoiceFlow.\n"
+        "Opciones:\n"
+        "  1. Ejecuta 'vf start' desde el directorio de VoiceFlow\n"
+        "  2. Añade project_dir a ~/.voiceflow/config.yaml\n"
+        "  3. Exporta VF_PROJECT_DIR=<ruta>\n"
+        "  4. Usa 'vf start --headless' para solo daemon + TTS"
+    )
+
+
 def _run_legacy_main(daemon, vf_config, debug_mode):
     """Run the legacy VoiceFlow main loop with Qt overlay and speech engine.
 
     Integrates with the WS daemon by broadcasting transcriptions.
     """
-    # These imports use the OLD module paths (not src/voiceflow/)
-    # They work when running from the VoiceFlow project directory
+    # Resolve and add project dir to sys.path so legacy modules are importable
+    project_dir = _resolve_project_dir(vf_config)
+    if project_dir not in sys.path:
+        sys.path.insert(0, project_dir)
+    # Also set CWD so relative paths in legacy code work (models/, audio/, etc.)
+    os.chdir(project_dir)
+    typer.echo(f"Proyecto VoiceFlow: {project_dir}")
+
     from cli import parse_args, get_engine_type, get_dictation_mode, get_model_paths
     from bootstrap import (
         create_core_components,

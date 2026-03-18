@@ -7,6 +7,7 @@ import yaml
 
 VF_HOME = Path(os.environ.get("VF_HOME", Path.home() / ".voiceflow"))
 DEFAULT_CONFIG = {
+    "project_dir": None,  # Path to VoiceFlow project (for legacy modules, models, sounds)
     "daemon": {"port": 9800, "host": "localhost"},
     "tts": {
         "engine": "sapi",
