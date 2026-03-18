@@ -55,6 +55,70 @@ def _instantiate_engine(name: str, tts_config: dict) -> TTSEngine:
         raise ValueError(f"TTS engine desconocido: {name}. Disponibles: sapi, kokoro, elevenlabs")
 
 
+def _check_pipx_sync():
+    """Check if pipx-installed version matches source code. Auto-reinstall if needed."""
+    import importlib.metadata
+    from pathlib import Path
+
+    try:
+        # Get installed package location
+        dist = importlib.metadata.distribution("voiceflow")
+        installed_location = None
+        for f in dist.files or []:
+            if f.name == "__init__.py" and "voiceflow" in str(f):
+                installed_location = str((dist.locate_file(f)).resolve().parent)
+                break
+
+        if not installed_location:
+            return
+
+        # Get source location
+        source_init = Path(__file__).resolve().parent / "__init__.py"
+        installed_init = Path(installed_location) / "__init__.py"
+
+        # If they're the same path, we're in editable mode — no sync needed
+        if source_init.resolve() == installed_init.resolve():
+            return
+
+        # Compare modification times of key files
+        source_dir = Path(__file__).resolve().parent
+        installed_dir = Path(installed_location)
+
+        files_to_check = ["cli.py", "daemon.py", "tts/elevenlabs.py", "tts/kokoro.py", "tts/sapi.py"]
+        stale = False
+        for fname in files_to_check:
+            src = source_dir / fname
+            inst = installed_dir / fname
+            if src.exists() and inst.exists():
+                if src.stat().st_mtime > inst.stat().st_mtime:
+                    stale = True
+                    break
+            elif src.exists() and not inst.exists():
+                stale = True
+                break
+
+        if stale:
+            typer.echo("[VoiceFlow] Código fuente más reciente que la versión instalada.", err=True)
+            typer.echo("[VoiceFlow] Reinstalando...", err=True)
+            import subprocess
+            result = subprocess.run(
+                [sys.executable, "-m", "pipx", "install", "--force",
+                 str(source_dir.parent.parent.parent)],
+                capture_output=True, text=True, timeout=60,
+            )
+            if result.returncode == 0:
+                typer.echo("[VoiceFlow] Actualizado. Reinicia 'vf start'.", err=True)
+                raise typer.Exit(0)
+            else:
+                typer.echo(f"[VoiceFlow] Error reinstalando: {result.stderr[:200]}", err=True)
+                typer.echo("[VoiceFlow] Continuando con versión instalada...", err=True)
+
+    except importlib.metadata.PackageNotFoundError:
+        pass  # Not installed via pip/pipx, running from source — OK
+    except Exception:
+        pass  # Don't block startup on sync check failures
+
+
 app = typer.Typer(
     name="vf",
     help="VoiceFlow — ambient voice shell with TTS and wake-word",
@@ -69,6 +133,8 @@ def start(
     debug: bool = typer.Option(False, "-d", "--debug", help="Debug mode (no voice engine)"),
 ):
     """Start VoiceFlow daemon (full mode by default)."""
+    _check_pipx_sync()
+
     from voiceflow.pid import is_daemon_running, write_pid, remove_pid, read_pid
 
     if is_daemon_running():
