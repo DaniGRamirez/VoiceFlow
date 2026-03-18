@@ -11,6 +11,15 @@ try:
 except ImportError:
     pass
 
+WINSOUND_AVAILABLE = False
+winsound = None
+try:
+    import winsound as _winsound
+    winsound = _winsound
+    WINSOUND_AVAILABLE = True
+except ImportError:
+    pass
+
 
 class SoundPlayer:
     def __init__(self, sounds_dir: str, enabled: bool = True, volume: float = 0.5):
@@ -18,11 +27,14 @@ class SoundPlayer:
         self.enabled = enabled
         self.volume = volume
         self._sounds: dict = {}
+        self._winsound_paths: dict = {}
         self._initialized = False
 
         if PYGAME_AVAILABLE:
             self._init_mixer()
             self._load_sounds()
+        elif WINSOUND_AVAILABLE:
+            self._load_winsound_paths()
 
     def _init_mixer(self):
         """Inicializa pygame mixer de forma segura."""
@@ -61,14 +73,35 @@ class SoundPlayer:
 
         print(f"[Audio] {loaded}/{len(sound_files)} sonidos cargados")
 
+    def _load_winsound_paths(self):
+        sound_files = {
+            "pop": "pop.wav", "ding": "ding.wav", "success": "success.wav",
+            "error": "error.wav", "click": "click.wav",
+        }
+        loaded = 0
+        for name, filename in sound_files.items():
+            path = os.path.join(self.sounds_dir, filename)
+            if os.path.exists(path):
+                self._winsound_paths[name] = path
+                loaded += 1
+        print(f"[Audio] {loaded}/{len(sound_files)} sonidos cargados (winsound)")
+
     def play(self, name: str):
-        if not self.enabled or not PYGAME_AVAILABLE or not self._initialized:
+        if not self.enabled:
             return
-        if name in self._sounds:
+        if PYGAME_AVAILABLE and self._initialized and name in self._sounds:
             try:
                 self._sounds[name].play()
             except Exception as e:
                 print(f"[Audio] Error reproduciendo {name}: {e}")
+        elif WINSOUND_AVAILABLE and name in self._winsound_paths:
+            try:
+                winsound.PlaySound(
+                    self._winsound_paths[name],
+                    winsound.SND_FILENAME | winsound.SND_ASYNC
+                )
+            except Exception as e:
+                print(f"[Audio] Error winsound {name}: {e}")
 
     def set_volume(self, volume: float):
         self.volume = volume
