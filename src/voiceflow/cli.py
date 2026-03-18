@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import subprocess
 import sys
@@ -531,6 +532,43 @@ def doctor():
         typer.echo(f"Daemon: corriendo (PID {read_pid()})")
     else:
         typer.echo("Daemon: no activo")
+
+
+@app.command()
+def listen(
+    json_output: bool = typer.Option(False, "--json", help="Output as JSON lines"),
+):
+    """Subscribe to VoiceFlow transcriptions via WebSocket.
+
+    Prints transcribed speech to stdout. Useful for piping to other tools.
+    Press Ctrl+C to stop.
+    """
+    import websockets
+
+    config = load_config()
+    url = f"ws://{config['daemon']['host']}:{config['daemon']['port']}"
+
+    async def subscribe():
+        try:
+            async with websockets.connect(url) as ws:
+                typer.echo(f"Escuchando transcripciones en {url}...", err=True)
+                async for raw in ws:
+                    data = json.loads(raw)
+                    if data.get("type") == "transcription":
+                        if json_output:
+                            print(json.dumps(data), flush=True)
+                        else:
+                            text = data.get("text", "")
+                            marker = "." if data.get("final") else "..."
+                            print(f"{text}{marker}", flush=True)
+        except (OSError, ConnectionRefusedError):
+            typer.echo("VoiceFlow no está corriendo", err=True)
+            raise typer.Exit(1)
+
+    try:
+        asyncio.run(subscribe())
+    except KeyboardInterrupt:
+        typer.echo("\nDesconectado", err=True)
 
 
 @app.command("config")
