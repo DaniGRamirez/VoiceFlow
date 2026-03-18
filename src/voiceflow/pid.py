@@ -14,11 +14,28 @@ def is_daemon_running() -> bool:
         return False
     try:
         pid = int(PID_FILE.read_text().strip())
-        os.kill(pid, 0)  # Signal 0 = check if process exists
-        return True
-    except (ValueError, ProcessLookupError, PermissionError):
+        return _is_pid_alive(pid)
+    except (ValueError, OSError):
         PID_FILE.unlink(missing_ok=True)
         return False
+
+
+def _is_pid_alive(pid: int) -> bool:
+    """Check if a process with given PID exists. Cross-platform."""
+    import sys
+    if sys.platform == "win32":
+        import subprocess
+        result = subprocess.run(
+            ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+            capture_output=True, text=True
+        )
+        return str(pid) in result.stdout
+    else:
+        try:
+            os.kill(pid, 0)
+            return True
+        except (ProcessLookupError, PermissionError):
+            return False
 
 
 def write_pid() -> None:
