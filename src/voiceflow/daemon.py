@@ -68,6 +68,7 @@ class VoiceFlowDaemon:
     async def start(self) -> None:
         """Start WebSocket server and speech loop."""
         self._tts.initialize()
+        self._event_loop = asyncio.get_running_loop()
         server_ctx = serve(self._handle_client, self._host, self._port)
         self._server = await server_ctx.__aenter__()
         self._speak_task = asyncio.create_task(self._speech_loop())
@@ -86,6 +87,18 @@ class VoiceFlowDaemon:
             await self._server.wait_closed()
         self._tts.shutdown()
         logger.info("VoiceFlow daemon stopped")
+
+    def broadcast_transcription_threadsafe(self, text: str, final: bool = True) -> None:
+        """Broadcast a transcription from any thread (e.g., speech engine thread)."""
+        msg = TranscriptionEvent(text=text, final=final)
+        loop = self._loop
+        if loop and loop.is_running():
+            asyncio.run_coroutine_threadsafe(self.broadcast(msg), loop)
+
+    @property
+    def _loop(self):
+        """Get the running event loop (set during start)."""
+        return getattr(self, "_event_loop", None)
 
     async def broadcast(self, msg: Any) -> None:
         """Send a server message to all connected clients."""
