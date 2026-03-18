@@ -42,6 +42,7 @@ def _instantiate_engine(name: str, tts_config: dict) -> TTSEngine:
         return KokoroEngine(
             lang=tts_config.get("lang", "es"),
             voice=tts_config.get("voice", "ef_dora"),
+            speed=tts_config.get("speed", 1.0),
         )
     elif name == "elevenlabs":
         from voiceflow.tts.elevenlabs import ElevenLabsEngine

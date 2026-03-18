@@ -33,9 +33,10 @@ VOICE_ALIASES = {
 class KokoroEngine(TTSEngine):
     """Local TTS using Kokoro ONNX (~82M params, ~330MB model)."""
 
-    def __init__(self, lang: str = "es", voice: str = "af_heart"):
+    def __init__(self, lang: str = "es", voice: str = "af_heart", speed: float = 1.0):
         self._lang = lang
         self._voice = VOICE_ALIASES.get(voice, voice)
+        self._speed = speed
         self._kokoro = None
         self._stop_requested = False
 
@@ -68,7 +69,7 @@ class KokoroEngine(TTSEngine):
 
         # Generate audio (kokoro-onnx returns samples + sample_rate)
         samples, sample_rate = self._kokoro.create(
-            text, voice=self._voice, speed=1.0, lang=self._lang
+            text, voice=self._voice, speed=self._speed, lang=self._lang
         )
 
         if self._stop_requested:
