@@ -461,6 +461,78 @@ def status():
         raise typer.Exit(1)
 
 
+@app.command()
+def doctor():
+    """Check VoiceFlow dependencies and system status."""
+    import importlib.util
+
+    checks = [
+        ("typer", "typer", True),
+        ("websockets", "websockets", True),
+        ("pyyaml", "yaml", True),
+        ("PyQt6", "PyQt6", False),
+        ("numpy", "numpy", False),
+        ("pvporcupine", "pvporcupine", False),
+        ("pvrecorder", "pvrecorder", False),
+        ("pyautogui", "pyautogui", False),
+        ("pygetwindow", "pygetwindow", False),
+        ("pyperclip", "pyperclip", False),
+        ("python-dotenv", "dotenv", False),
+        ("pygame", "pygame", False),
+        ("sounddevice", "sounddevice", False),
+        ("fastapi", "fastapi", False),
+        ("uvicorn", "uvicorn", False),
+    ]
+
+    ok = 0
+    missing_optional = []
+    missing_required = []
+
+    for name, module, required in checks:
+        spec = importlib.util.find_spec(module)
+        if spec:
+            typer.echo(f"  + {name}")
+            ok += 1
+        elif required:
+            typer.echo(f"  ! {name} (REQUERIDO)")
+            missing_required.append(name)
+        else:
+            typer.echo(f"  - {name}")
+            missing_optional.append(name)
+
+    typer.echo(f"\n{ok}/{len(checks)} deps OK")
+
+    if missing_required:
+        typer.echo(f"\nFaltan deps requeridas: {', '.join(missing_required)}")
+
+    if missing_optional:
+        typer.echo(f"\nOpcionales no instaladas: {', '.join(missing_optional)}")
+        typer.echo("Instalar: python -m pipx inject voiceflow " + " ".join(missing_optional))
+
+    from voiceflow.config import VF_HOME
+    config_path = VF_HOME / "config.yaml"
+    if config_path.exists():
+        typer.echo(f"\nConfig: {config_path}")
+        cfg = load_config()
+        project_dir = cfg.get("project_dir")
+        if project_dir:
+            import os
+            if os.path.isfile(os.path.join(project_dir, "main.py")):
+                typer.echo(f"Proyecto: {project_dir} (OK)")
+            else:
+                typer.echo(f"Proyecto: {project_dir} (NO ENCONTRADO)")
+        else:
+            typer.echo("Proyecto: no configurado (necesario para full mode)")
+    else:
+        typer.echo(f"\nConfig: no existe ({config_path})")
+
+    from voiceflow.pid import is_daemon_running, read_pid
+    if is_daemon_running():
+        typer.echo(f"Daemon: corriendo (PID {read_pid()})")
+    else:
+        typer.echo("Daemon: no activo")
+
+
 @app.command("config")
 def show_config():
     """Show current configuration."""
