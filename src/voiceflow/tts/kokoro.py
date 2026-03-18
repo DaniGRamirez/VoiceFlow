@@ -1,69 +1,96 @@
-"""Kokoro TTS — local neural voice synthesis."""
+"""Kokoro TTS — local neural voice synthesis via ONNX runtime.
+
+Uses kokoro-onnx (no PyTorch, no spacy). Lightweight and fast.
+
+Requires:
+  pip install kokoro-onnx soundfile
+  Download models to ~/.voiceflow/models/:
+    kokoro-v1.0.onnx (~330MB)
+    voices-v1.0.bin (~5MB)
+  From: https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0
+"""
 from __future__ import annotations
 
 import os
 import tempfile
+
+from voiceflow.config import VF_HOME
 from voiceflow.tts.base import TTSEngine
+
+MODELS_DIR = VF_HOME / "models"
+DEFAULT_MODEL = MODELS_DIR / "kokoro-v1.0.onnx"
+DEFAULT_VOICES = MODELS_DIR / "voices-v1.0.bin"
+
+# Available voices: https://github.com/thewh1teagle/kokoro-onnx#voices
+# Spanish voices start with "es_" prefix
+VOICE_ALIASES = {
+    "dora": "ef_dora",
+    "sara": "ef_sara",
+    "default": "af_heart",
+}
 
 
 class KokoroEngine(TTSEngine):
-    """Local TTS using Kokoro (82M param model).
+    """Local TTS using Kokoro ONNX (~82M params, ~330MB model)."""
 
-    Requires: pip install kokoro soundfile
-    Requires: espeak-ng installed on system
-    """
-
-    def __init__(self, lang: str = "es", voice: str = "ef_dora"):
+    def __init__(self, lang: str = "es", voice: str = "af_heart"):
         self._lang = lang
-        self._voice = voice
-        self._pipeline = None
+        self._voice = VOICE_ALIASES.get(voice, voice)
+        self._kokoro = None
         self._stop_requested = False
 
     def initialize(self) -> None:
-        """Load Kokoro pipeline (downloads model on first use)."""
-        from kokoro import KPipeline
+        """Load Kokoro ONNX model."""
+        from kokoro_onnx import Kokoro
 
-        # Map language codes: kokoro uses single char codes
-        lang_map = {"es": "e", "en": "a", "fr": "f", "ja": "j", "ko": "k", "zh": "z"}
-        lang_code = lang_map.get(self._lang, self._lang)
+        model_path = str(DEFAULT_MODEL)
+        voices_path = str(DEFAULT_VOICES)
 
-        self._pipeline = KPipeline(lang_code=lang_code)
-        print(f"[Kokoro] Pipeline cargado (lang={lang_code}, voice={self._voice})")
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(
+                f"Modelo Kokoro no encontrado en {model_path}\n"
+                f"Descarga desde: https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0\n"
+                f"  kokoro-v1.0.onnx → {model_path}\n"
+                f"  voices-v1.0.bin → {voices_path}"
+            )
+
+        self._kokoro = Kokoro(model_path, voices_path)
+        print(f"[Kokoro] Modelo ONNX cargado (voice={self._voice})")
 
     def speak(self, text: str) -> None:
-        """Generate audio and play it."""
-        if not self._pipeline:
+        """Generate audio and play via winsound."""
+        if not self._kokoro:
             self.initialize()
 
         self._stop_requested = False
 
         import soundfile as sf
 
-        # Generate audio chunks
-        for i, (gs, ps, audio) in enumerate(self._pipeline(text, voice=self._voice)):
-            if self._stop_requested:
-                break
+        # Generate audio (kokoro-onnx returns samples + sample_rate)
+        samples, sample_rate = self._kokoro.create(
+            text, voice=self._voice, speed=1.0, lang=self._lang
+        )
 
-            # Write to temp file and play via winsound (available on Windows)
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
-                tmp_path = f.name
+        if self._stop_requested:
+            return
 
-            try:
-                sf.write(tmp_path, audio, 24000)
-                # Play synchronously via winsound
+        # Write to temp wav and play
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
+            tmp_path = f.name
+
+        try:
+            sf.write(tmp_path, samples, sample_rate)
+            if not self._stop_requested:
                 import winsound
-                if not self._stop_requested:
-                    winsound.PlaySound(tmp_path, winsound.SND_FILENAME)
-            finally:
-                try:
-                    os.unlink(tmp_path)
-                except OSError:
-                    pass
+                winsound.PlaySound(tmp_path, winsound.SND_FILENAME)
+        finally:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
 
     def stop(self) -> None:
-        """Request stop of current speech."""
         self._stop_requested = True
-        # Stop any playing winsound
         try:
             import winsound
             winsound.PlaySound(None, winsound.SND_PURGE)
@@ -72,4 +99,4 @@ class KokoroEngine(TTSEngine):
 
     def shutdown(self) -> None:
         self.stop()
-        self._pipeline = None
+        self._kokoro = None
