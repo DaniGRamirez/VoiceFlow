@@ -112,10 +112,15 @@ def _run_full(daemon, config, debug_mode, remove_pid):
         typer.echo("Tip: vf start debe ejecutarse desde el directorio de VoiceFlow", err=True)
         typer.echo("     o usa 'vf start --headless' para solo daemon + TTS", err=True)
     finally:
-        # Stop daemon
+        # Clean shutdown of daemon thread
         if daemon_loop and daemon_loop.is_running():
-            asyncio.run_coroutine_threadsafe(daemon.stop(), daemon_loop)
+            future = asyncio.run_coroutine_threadsafe(daemon.stop(), daemon_loop)
+            try:
+                future.result(timeout=5)
+            except Exception:
+                pass
             daemon_loop.call_soon_threadsafe(daemon_loop.stop)
+            daemon_thread.join(timeout=3)
         remove_pid()
 
 
