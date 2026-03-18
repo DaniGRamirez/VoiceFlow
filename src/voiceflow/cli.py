@@ -10,6 +10,48 @@ import sys
 import typer
 
 from voiceflow.config import load_config, ensure_home
+from voiceflow.tts.base import TTSEngine
+
+
+def _create_tts_engine(tts_config: dict) -> TTSEngine:
+    """Create TTS engine from config. Falls back to SAPI if requested engine fails."""
+    engine_name = tts_config.get("engine", "sapi")
+    fallback_name = tts_config.get("fallback_engine")
+
+    try:
+        return _instantiate_engine(engine_name, tts_config)
+    except Exception as e:
+        typer.echo(f"[TTS] Error creando engine '{engine_name}': {e}", err=True)
+        if fallback_name and fallback_name != engine_name:
+            typer.echo(f"[TTS] Usando fallback: {fallback_name}", err=True)
+            return _instantiate_engine(fallback_name, tts_config)
+        if engine_name != "sapi":
+            typer.echo("[TTS] Usando fallback: sapi", err=True)
+            from voiceflow.tts.sapi import SAPIEngine
+            return SAPIEngine()
+        raise
+
+
+def _instantiate_engine(name: str, tts_config: dict) -> TTSEngine:
+    """Instantiate a specific TTS engine by name."""
+    if name == "sapi":
+        from voiceflow.tts.sapi import SAPIEngine
+        return SAPIEngine()
+    elif name == "kokoro":
+        from voiceflow.tts.kokoro import KokoroEngine
+        return KokoroEngine(
+            lang=tts_config.get("lang", "es"),
+            voice=tts_config.get("voice", "ef_dora"),
+        )
+    elif name == "elevenlabs":
+        from voiceflow.tts.elevenlabs import ElevenLabsEngine
+        return ElevenLabsEngine(
+            voice=tts_config.get("voice", "Rachel"),
+            api_key=tts_config.get("api_key") or os.environ.get("ELEVENLABS_API_KEY"),
+        )
+    else:
+        raise ValueError(f"TTS engine desconocido: {name}. Disponibles: sapi, kokoro, elevenlabs")
+
 
 app = typer.Typer(
     name="vf",
@@ -37,9 +79,8 @@ def start(
     if port:
         config["daemon"]["port"] = port
 
-    # Create TTS engine
-    from voiceflow.tts.sapi import SAPIEngine
-    tts = SAPIEngine()
+    # Create TTS engine from config
+    tts = _create_tts_engine(config.get("tts", {}))
 
     # Create daemon
     from voiceflow.daemon import VoiceFlowDaemon
