@@ -164,6 +164,12 @@ def _run_legacy_main(daemon, vf_config, debug_mode):
     os.chdir(project_dir)
     typer.echo(f"Proyecto VoiceFlow: {project_dir}")
 
+    # Clean sys.argv so legacy argparse doesn't see typer's args (e.g. "start")
+    original_argv = sys.argv
+    sys.argv = [sys.argv[0]]
+    if debug_mode:
+        sys.argv.append("-d")
+
     from cli import parse_args, get_engine_type, get_dictation_mode, get_model_paths
     from bootstrap import (
         create_core_components,
